@@ -10,6 +10,10 @@ export type Priority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 export type TaskStatus = 'todo' | 'in-progress' | 'waiting' | 'delegated' | 'completed' | 'cancelled' | 'on-hold';
 export type ProjectStatus = 'active' | 'completed' | 'paused' | 'archived';
 export type ViewType = 'list' | 'kanban' | 'calendar' | 'timeline' | 'table' | 'gantt' | 'mindmap' | 'time-block';
+/** 能量等级:GTD 上下文维度之一,用于"低能量时段挑低能量任务"。 */
+export type EnergyLevel = 'low' | 'medium' | 'high';
+/** 任务上下文:GTD @home/@office/@phone/@computer 等,可自定义。 */
+export type TaskContext = '@home' | '@office' | '@phone' | '@computer' | '@errands' | '@anywhere';
 export type Theme = 'light' | 'dark' | 'system' | 'custom';
 export type FilterOperator = 'equals' | 'not-equals' | 'contains' | 'greater-than' | 'less-than' | 'in' | 'between' | 'starts-with' | 'ends-with' | 'is-empty' | 'is-not-empty';
 export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -58,7 +62,7 @@ export interface Task {
   updatedAt: Date;
   isRecurring: boolean;
   parentTaskId: string | null;
-  subtasks: { id: string; title: string; completed: boolean; order: number }[];
+  subtasks: Subtask[];
   attachments: Attachment[];
   comments: Comment[];
   links: Link[];
@@ -75,6 +79,10 @@ export interface Task {
   createdBy: string | null;
   order: number;
   version: number;
+  /** 能量等级(可选)。GTD 上下文维度之一,用于"低能量时段挑低能量任务"。 */
+  energyLevel?: EnergyLevel | null;
+  /** 任务上下文(可选)。GTD @home/@office 等,可自定义。 */
+  context?: TaskContext | null;
   /**
    * 版本向量:{ [deviceId]: counter }。E2EE P2P 同步协议用它做因果偏序判定,
    * 区分"先后编辑"与"并发编辑"。HTTP REST 模式下可为 undefined(退化为
@@ -83,6 +91,14 @@ export interface Task {
   deviceVersion?: Record<string, number>;
   isDeleted: boolean;
   deletedAt: Date | null;
+}
+
+/** 子任务 — Task.subtasks 数组元素。 */
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+  order: number;
 }
 
 export interface RecurrenceRule {

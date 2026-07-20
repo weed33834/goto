@@ -4,6 +4,105 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Phase 1 + Phase 2 体验扩展(13 项,2026-07-20)
+
+> 基于 [PRODUCT_EVOLUTION_PLAN_v1](docs/PRODUCT_EVOLUTION_PLAN_v1.md) 的 PM 评估 + 竞品调研
+> (Todoist / TickTick / Things 3 / OmniFocus / Habitica) + 代码审计合成结论:
+> Goto「类型层超前、UI 层滞后」——45 字段 Task 类型在 UI 只接通 ~30%,5 大阻塞性体验缺口。
+> 本轮按"用户感知优先"顺序闭环 Phase 1 全 10 项 + Phase 2 的看板 / 统计 / 回顾 = **13 项**。
+> 全量 verify:typecheck ✅ / build ✅ / vitest **511 passed**(原 494 → 511)。
+
+### Added — Phase 1 阻塞性体验(10 项)
+
+- **1.1 提醒系统**(`desktop/src/shared/hooks/useReminders.ts` + `TaskEditor`):
+  Task 新增 `reminderDate` 字段(datetime-local 输入)。`useReminders` 全局 hook 在 App.tsx 挂载,
+  每分钟扫描到期任务,调浏览器 `Notification` API 弹原生通知(需用户授权 `Notification.requestPermission`)。
+  SW 后台唤醒在 PWA 安装态生效;同任务 `tag` 去重避免重复弹。
+- **1.2 重复任务**(`desktop/src/shared/utils/recurrenceUtils.ts` + `tasksSlice.toggleTaskComplete`):
+  完整 `RecurrenceRule` 编辑器(type / interval / daysOfWeek / endType=never|date|count / endDate / endCount),
+  实时预览(`describeRecurrence`,如"每周 周一/周三/周五,共 12 次")。
+  完成有 recurrence 的任务时自动生成下次实例(新 id / 新 dueDate / 重置 completed / subtasks / checklist / progress)。
+  自实现覆盖 95% 用例,不引入 rrule.js(~30KB)。
+- **1.3 子任务 UI**(`TaskCard` + `TaskEditor` + `Subtask` 类型导出):
+  TaskCard 点击展开/折叠显示子任务列表,可勾选 / 改标题;TaskEditor 内可添加 / 删除子任务。
+  修复 `Subtask` 接口未导出 + `toggleSubtask` 不存在(改用 `updateSubtask`)两个 typecheck 错误。
+- **1.4 TaskEditor 暴露全字段**:在原 title/dueDate/priority/tags 基础上,新增
+  `reminderDate` / `estimatedTime` / `isStarred` / `progress`(0-100 滑块) /
+  `energyLevel`(低/中/高 — GTD 上下文维度)/ `context`(@home/@office/@phone/@computer/@errands/@anywhere)
+  共 7 个高级字段。基本字段 → 时间 → 组织 → 高级 四段布局,移动端单列 / 桌面端双列网格。
+- **1.5 自然语言解析**(`naturalLanguageParser` 接入 `TaskEditor.handleTitleBlur`):
+  只在新建模式触发(避免编辑时覆盖用户输入),识别 dueDate(今天/明天/下周一/3天内/12月25日)/
+  priority(紧急!/高!/低?)/ estimatedTime(30分钟/2小时)/ recurrence(每天/每周一三五/每月)/
+  tags(#工作 #紧急)/ project(+项目名)。解析后自动填字段并清掉原文中的关键词。
+- **1.6 批量操作**(`TaskList` 接入 `useBulkSelection`):工具栏含
+  全选 / 清空 / 标记完成 / 取消完成 / 改优先级(下拉)/ 移到项目(下拉,含"无项目"选项)/ 删除所选。
+  批量模式开启时自动禁用拖拽。
+- **1.7 拖拽排序**(`TaskList` 接入 `@dnd-kit/sortable`):`PointerSensor` distance:8px 避免误触点击,
+  `KeyboardSensor` 保留可访问性。拖完调 `reorderTasks` 落 store。
+  `vendor-dnd` chunk 独立拆分(KanbanPage + TaskList 共用,长缓存友好)。
+- **1.8 PWA**(`vite.config.ts` VitePWA + `public/icon.svg` + `index.html` meta):
+  `registerType: 'autoUpdate'` + `injectRegister: 'script'`(CSP 兼容)。
+  Manifest 含 name/short_name/theme_color/icons(SVG,任意尺寸清晰)/shortcuts(今日/时间织锦/保险库)。
+  Workbox 运行时缓存:/assets/ CacheFirst(30 天)、app shell NetworkFirst(3s 超时)。
+  不缓存 /api/ 和 /ws/,避免本地优先应用读到旧数据。
+  index.html 加 theme-color / apple-touch-icon / apple-mobile-web-app-* / description meta。
+- **1.9 vim 键盘快捷键**(`desktop/src/shared/hooks/useVimShortcuts.ts`):在 TaskList 接入,
+  绑定 `j`/`↓` 选中下一个,`k`/`↑` 选中上一个,`Enter`/`e` 编辑,`x` 切换完成,
+  `d` 删除,`gg` 跳到第一个(双击 g,500ms 内),`G` 跳到最后一个,`/` 跳搜索页。
+  在 input/textarea/select/contenteditable 聚焦时不触发,任何修饰键(ctrl/cmd/alt)不触发。
+  选中任务 `ring-2 ring-primary/50` 高亮;按 e 在卡片位置 inline 渲染 TaskEditor。
+- **1.10 项目详情页**(`desktop/src/renderer/pages/ProjectDetailPage.tsx`):
+  路由 `/projects/:id`,面包屑导航。项目元信息(名称/颜色/描述/进度条)、行内编辑(名称/描述/颜色)、
+  删除项目(带 taskCount 二次确认)。复用 `TaskList` 通过 `tasksOverride` 注入项目任务。
+  `ProjectsPage` 卡片改为 `<Link to={/projects/${id}}>` 包裹,hover 显示"查看详情 ›"。
+
+### Added — Phase 2 体验扩展(3 项)
+
+- **2.1 看板视图**(`desktop/src/renderer/pages/KanbanPage.tsx`):
+  5 列:待办 / 进行中 / 等待 / 已委派 / 已完成(cancelled/on-hold 不显示)。
+  跨列拖拽 = 改 status,列内拖拽 = `reorderTasks`。用 `@dnd-kit/core` 的 `useDraggable` + `useDroppable`
+  (非 SortableContext,多容器场景更简单)。项目筛选下拉。Sidebar "任务"组新增"看板"入口。
+- **2.2 统计仪表盘**(`desktop/src/renderer/pages/InsightsPage.tsx`):
+  4 张统计卡(活跃 / 已完成 / 今日待办 / 逾期)。
+  **Karma 分数**(类 Todoist):7 日完成数 × 10 + 14 日完成数 × 5,封顶 1000。
+  预估 / 实际总时长。14 天完成趋势(纯 CSS 条形图)。
+  按优先级 / 状态 / 项目分布(`BarRow` 横条组件)。纯 SVG + Tailwind,不引图表库。
+- **2.3 每周回顾**(`desktop/src/renderer/pages/ReviewPage.tsx`):
+  周一开始的周范围,`weekOffset` 切换(上周 / 本周 / 下周)。
+  4 个概要卡:本周完成 / 本周新建未完 / 逾期 / 本周到期。
+  5 个 section:已完成 / 烂尾(本周新建未完)/ 逾期 / 本周到期 / 项目进度。
+  反思笔记(localStorage 持久化,按 weekOffset 隔离)。
+  一键归档 30 天前已完成任务(清空 `isArchived=true`)。Sidebar 新增"洞察"组入口。
+
+### Changed
+
+- `desktop/src/shared/types.ts`:`Task.subtasks` 类型从内联改为引用导出的 `Subtask` 接口;
+  `Task.energyLevel?` / `Task.context?` 已在前阶段加,本轮 UI 接通。
+- `desktop/src/renderer/components/task/TaskCard.tsx`:完全重写,加优先级色条 / 星标 / 重复 / 提醒图标 / 子任务展开 /
+  标签 / 项目 / 能量 / 上下文 / 预估时间 chip / 进度条 / 逾期高亮。
+- `desktop/src/renderer/components/task/TaskEditor.tsx`:完全重写,加 reminderDate / recurrence 编辑器 /
+  subtasks 列表 / 全字段 / NLP。
+- `desktop/src/renderer/components/task/TaskList.tsx`:完全重写,加批量操作 / 拖拽 / vim 选中高亮 / inline 编辑。
+- `desktop/src/renderer/App.tsx`:挂 `useReminders()`;lazy 加载 4 个新页面 + 注册路由
+  (`/projects/:id` / `/kanban` / `/insights` / `/review`)。
+- `desktop/src/renderer/components/layout/Sidebar.tsx`:navGroups 新增"洞察"组(统计仪表 + 每周回顾),"任务"组加"看板"。
+
+### Fixed
+
+- `describeRecurrence` 输出格式:`'每周 周一/三/五'` → `'每周 周一/周三/周五'`(每天加"周"前缀,更易读),
+  与 `recurrenceUtils.test.ts` 期望对齐。
+- `TaskEditor` 类型错误:本地 `type Priority` 与导入的 `Priority` 冲突,移除本地别名;
+  未使用的 `TaskStatus` 导入删除。
+
+### 测试基线
+
+- frontend unit:**511 passed** / 26 skipped(25 test files,新增 `recurrenceUtils.test.ts` 17 个用例)
+- frontend e2e:108 passed(本轮未触及)
+- relay:9 passed / backend:104(本轮未触及)
+- 首屏 JS gzip ~103KB(≤ 250KB 预算)
+
+---
+
 ## [Unreleased] — Phase A 体验审计闭环(P0/P1/P2 共 25 项)
 
 > 本轮基于一份三轮尖锐批评的体验审计报告(P0 致命问题 6 项 / P1 体验缺口 12 项 / P2 工程缺陷 7 项)逐项修复,

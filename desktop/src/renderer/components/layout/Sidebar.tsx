@@ -30,10 +30,18 @@ const navGroups: NavGroup[] = [
     title: '任务',
     items: [
       { id: 'today', label: '今日任务' },
+      { id: 'kanban', label: '看板' },
       { id: 'calendar', label: '日历' },
       { id: 'projects', label: '项目' },
       { id: 'categories', label: '分类' },
       { id: 'tags', label: '标签' },
+    ],
+  },
+  {
+    title: '洞察',
+    items: [
+      { id: 'insights', label: '统计仪表' },
+      { id: 'review', label: '每周回顾' },
     ],
   },
   {

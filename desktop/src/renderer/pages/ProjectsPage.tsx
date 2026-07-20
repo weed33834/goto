@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppStore } from '../../shared/store';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -79,26 +80,33 @@ export function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <div key={project.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div
+              key={project.id}
+              className="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+            >
               <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} />
-                  <h3 className="font-medium text-slate-800 dark:text-slate-100">{project.name}</h3>
-                </div>
+                <Link
+                  to={`/projects/${project.id}`}
+                  className="flex min-w-0 items-center gap-2 hover:text-primary"
+                >
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
+                  <h3 className="truncate font-medium text-slate-800 group-hover:text-primary dark:text-slate-100">{project.name}</h3>
+                </Link>
                 <button
                   onClick={() => handleDelete(project.id, project.name, project.taskCount)}
-                  className="text-sm text-slate-400 hover:text-danger dark:text-slate-500"
+                  className="shrink-0 text-sm text-slate-400 hover:text-danger dark:text-slate-500"
                   aria-label={`删除项目 ${project.name}`}
                 >
                   删除
                 </button>
               </div>
               {project.description && <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">{project.description}</p>}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 dark:text-slate-500 sm:gap-3">
+              <Link to={`/projects/${project.id}`} className="flex flex-wrap items-center gap-2 text-xs text-slate-400 dark:text-slate-500 hover:text-primary sm:gap-3">
                 <span>{project.taskCount} 任务</span>
                 <span>{project.progress}% 完成</span>
                 <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-700">{project.status}</span>
-              </div>
+                <span className="ml-auto opacity-0 transition-opacity group-hover:opacity-100">查看详情 ›</span>
+              </Link>
             </div>
           ))}
         </div>

@@ -7,6 +7,7 @@ import { useAppStore } from '../shared/store';
 import { usePrivacyMode } from './hooks/usePrivacyMode';
 import { useAutoLock } from './hooks/useAutoLock';
 import { useSyncScheduler } from './hooks/useSyncScheduler';
+import { useReminders } from '../shared/hooks/useReminders';
 import { useKeyboardShortcuts } from '../shared/hooks/useKeyboardShortcuts';
 import { LockScreen } from './components/layout/LockScreen';
 import { Sidebar } from './components/layout/Sidebar';
@@ -104,6 +105,19 @@ const TagsPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
+// Phase 1.10 / 2.1 / 2.2 / 2.3:项目详情 / 看板 / 统计 / 回顾
+const ProjectDetailPage = lazy(() =>
+  import('./pages/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })),
+);
+const KanbanPage = lazy(() =>
+  import('./pages/KanbanPage').then((m) => ({ default: m.KanbanPage })),
+);
+const InsightsPage = lazy(() =>
+  import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage })),
+);
+const ReviewPage = lazy(() =>
+  import('./pages/ReviewPage').then((m) => ({ default: m.ReviewPage })),
+);
 
 function PageFallback() {
   return (
@@ -199,6 +213,8 @@ function AppContent() {
 
   // 启动同步调度器:已配对设备自动建立 SyncEngine + 5 分钟周期同步
   useSyncScheduler();
+  // Phase 1.1:提醒系统 — 扫描 reminderDate 到期任务,触发浏览器 Notification + toast
+  useReminders();
 
   useEffect(() => {
     checkStatus();
@@ -259,6 +275,10 @@ function AppContent() {
                 <Route path="/today" element={<TodayPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                <Route path="/kanban" element={<KanbanPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/review" element={<ReviewPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/tags" element={<TagsPage />} />
                 <Route path="/search" element={<SearchPage />} />

@@ -13,6 +13,7 @@ import {
 import { generateId, deepClone } from '../constants';
 import { pluginManager } from '../../plugins';
 import { pushUndo, undoDeleteTask } from '../../hooks/useUndo';
+import { buildNextRecurrenceTask } from '../../utils/recurrenceUtils';
 
 /**
  * P0 修复:把所有"用户可见反馈"从 console.log 改成真实通知。
@@ -211,11 +212,45 @@ export const createTasksSlice: StateCreator<AppStore, [], [], TasksSlice> = (set
   toggleTaskComplete: (id) => {
     const task = get().tasks.find((t) => t.id === id);
     if (task) {
+      const willComplete = !task.completed;
       get().updateTask(id, {
-        completed: !task.completed,
-        completedAt: !task.completed ? new Date() : null,
-        status: !task.completed ? 'completed' : 'todo',
+        completed: willComplete,
+        completedAt: willComplete ? new Date() : null,
+        status: willComplete ? 'completed' : 'todo',
       });
+
+      // Phase 1.2:完成一个 recurring 任务后,自动生成下次实例。
+      // 只在"标记完成"时生成(取消完成不生成),且需有 recurrence 规则。
+      // buildNextRecurrenceTask 返回 null 表示规则已结束(endDate/endCount 上限)。
+      if (willComplete && task.recurrence) {
+        const completedAt = new Date();
+        const nextTask = buildNextRecurrenceTask(task, completedAt);
+        if (nextTask) {
+          // 直接 set + saveData,不走 addTask(避免 addTask 内的 pluginManager / API
+          // 对新生成的 recurring 实例做不需要的副作用;新实例 id 已生成)
+          set((state) => ({ tasks: [...state.tasks, nextTask] }));
+          get().saveData();
+
+          if (get().apiAvailable) {
+            const { id: _id, createdAt: _c, updatedAt: _u, ...payload } = nextTask;
+            apiCreateTask({ ...payload, id: nextTask.id }).catch((error) => {
+              console.warn('API create recurring task failed:', error);
+              // API 失败不回滚本地(下次同步会修复),只通知
+              pushNotification(get, {
+                type: 'task',
+                title: '同步失败',
+                message: `重复任务"${nextTask.title}"的下一次实例未同步到服务器`,
+              });
+            });
+          }
+
+          pushNotification(get, {
+            type: 'task',
+            title: '已生成下一次重复任务',
+            message: `${nextTask.title} · ${nextTask.dueDate?.toLocaleDateString() ?? ''}`,
+          });
+        }
+      }
     }
   },
 

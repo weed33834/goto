@@ -106,7 +106,7 @@ flowchart LR
 
 | 组件 | 技术栈 | 干什么 |
 | --- | --- | --- |
-| **Web 应用**（`desktop/`） | Vite · React 18 · Zustand 4 · TypeScript 5 | 本地优先的浏览器任务管理。持久化到 IndexedDB,用 Web Crypto(PBKDF2)加密保险库;JSON 备份用 PBKDF2-SHA256 600k + AES-256-GCM 加密。**8 个页面 + 时间织锦视图**、保险库、同步设置、6 分区设置页(安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区)。 |
+| **Web 应用**（`desktop/`） | Vite · React 18 · Zustand 4 · TypeScript 5 | 本地优先的浏览器任务管理。持久化到 IndexedDB,用 Web Crypto(PBKDF2)加密保险库;JSON 备份用 PBKDF2-SHA256 600k + AES-256-GCM 加密。**12 个页面 + 时间织锦视图**(Today / Calendar / Projects / 项目详情 / Categories / Tags / Search / Vault / Settings / 看板 / 统计仪表盘 / 每周回顾)、提醒、重复任务、子任务、NLP 快速添加、批量操作、拖拽排序、vim 快捷键、可安装 PWA、6 分区设置页(安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区)。 |
 | **中继 Relay** | Node.js 18+（≥20）· WebSocket · express-rate-limit · Docker | 只转发密文帧，带离线队列（7 天 TTL）。LAN 优先，relay 兜底。 |
 | **后端** | Python 3.11+ · FastAPI · PyGit2 | 可选组件:任务 / 项目 / 分类 / 标签 API、Git 管理、插件系统。与同步链路解耦。**22 个 REST 端点**。 |
 
@@ -114,12 +114,13 @@ Web 应用通过 relay 建立加密 P2P 会话跨设备同步；relay 只是个�
 
 ## 页面与视图
 
-Web 应用提供这些页面（Today、Calendar、Projects、Categories、Tags、Search、
-Vault、Settings）以及一个时间织锦（Mosaic）视图。
+Web 应用提供这些页面（Today、Calendar、Projects、**项目详情**、Categories、Tags、
+Search、Vault、Settings、**看板**、**统计仪表盘**、**每周回顾**）以及一个时间织锦（Mosaic）视图。
 
-> 早期文档提到过的 Kanban / Gantt / Timeline / TimeBlock / Table / MindMap 视图
+> 早期文档提到过的 Gantt / Timeline / TimeBlock / Table / MindMap 视图
 > 与 Templates / Automation / Notes / Analytics / Goals / Habits 页面**当前未实现**,
-> 转向计划见 [docs/GOTO_PIVOT_PLAN.md](docs/GOTO_PIVOT_PLAN.md)。
+> 转向计划见 [docs/GOTO_PIVOT_PLAN.md](docs/GOTO_PIVOT_PLAN.md) 与
+> [docs/PRODUCT_EVOLUTION_PLAN_v1.md](docs/PRODUCT_EVOLUTION_PLAN_v1.md)。
 
 任务依赖（`blockedBy` / `blocks`）会拦着你：被依赖的任务没完成前，不让你点完成。
 

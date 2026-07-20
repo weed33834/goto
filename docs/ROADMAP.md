@@ -1,8 +1,8 @@
 # Goto 开发路线图
 
 > **最后更新**:2026-07-20
-> **当前版本**:v1.3.0(Phase A 重构期)
-> **测试总数**:611(Web 应用 unit 494 passed + 26 skipped | Web 应用 e2e 108 | Relay 9 | Backend 104)
+> **当前版本**:v1.3.0 + Phase 1/2 体验扩展(2026-07-20)
+> **测试总数**:628(Web 应用 unit **511 passed** + 26 skipped | Web 应用 e2e 108 | Relay 9 | Backend 104)
 
 > ⚠️ **产品方向转向**:本项目正从 `TaskFlow`(本地优先任务工具)转向 `Goto`(加密私人时间资产)。完整转向计划见 [GOTO_PIVOT_PLAN.md](./GOTO_PIVOT_PLAN.md)。本路线图仅保留转向前的历史归档与转向后的 Phase A 进度。Phase B-D 见 Pivot Plan。
 
@@ -65,6 +65,57 @@
 | 改 | CSP connect-src 放宽 | `ws: wss: http: https: blob:` |
 
 verify 全绿:typecheck + build + unit 494 + e2e 108。首屏 JS gzip ~103KB(≤ 250KB 预算)。
+
+### 二.2 Phase 1 + Phase 2 体验扩展(2026-07-20 ✅ 完成)
+
+> 基于 [PRODUCT_EVOLUTION_PLAN_v1](./PRODUCT_EVOLUTION_PLAN_v1.md) 的 PM 评估 + 竞品调研
+> (Todoist / TickTick / Things 3 / OmniFocus / Habitica) + 代码审计合成结论:
+> Goto「类型层超前、UI 层滞后」——45 字段 Task 类型在 UI 只接通 ~30%,5 大阻塞性体验缺口。
+> 本轮按"用户感知优先"顺序闭环 Phase 1 全 10 项 + Phase 2 的看板 / 统计 / 回顾 = **13 项**。
+
+#### Phase 1 阻塞性体验(10 项)
+
+| # | 任务 | 状态 | 关键文件 |
+|---|---|---|---|
+| 1.1 | 提醒系统(Notification API + SW + UI) | ✅ | `useReminders.ts` + `TaskEditor.reminderDate` |
+| 1.2 | 重复任务 next-instance + recurrence UI | ✅ | `recurrenceUtils.ts` + `tasksSlice.toggleTaskComplete` |
+| 1.3 | 子任务 UI(TaskCard 展开 + TaskEditor 区) | ✅ | `TaskCard` + `TaskEditor` + 导出 `Subtask` 接口 |
+| 1.4 | TaskEditor 暴露全字段(energy/context/progress/star/estimatedTime) | ✅ | `TaskEditor.tsx` 完全重写 |
+| 1.5 | 接入 naturalLanguageParser | ✅ | `TaskEditor.handleTitleBlur` |
+| 1.6 | 批量操作 UI(TaskList 接入 useBulkSelection) | ✅ | `TaskList.tsx` |
+| 1.7 | 拖拽排序(@dnd-kit + reorderTasks) | ✅ | `TaskList.tsx` + `vendor-dnd` chunk |
+| 1.8 | PWA(Service Worker + manifest + icons) | ✅ | `vite.config.ts` + `public/icon.svg` + `index.html` |
+| 1.9 | vim 键盘快捷键(j/k/e/d/x/gg/G/) | ✅ | `useVimShortcuts.ts` |
+| 1.10 | 项目详情页 /projects/:id | ✅ | `ProjectDetailPage.tsx` |
+
+#### Phase 2 体验扩展(3 项)
+
+| # | 任务 | 状态 | 关键文件 |
+|---|---|---|---|
+| 2.1 | 看板视图 KanbanView | ✅ | `KanbanPage.tsx`(5 列 + 跨列拖拽改 status) |
+| 2.2 | 统计仪表盘 InsightsPage | ✅ | `InsightsPage.tsx`(Karma + 14 天趋势 + 分布) |
+| 2.3 | 每周回顾 ReviewPage | ✅ | `ReviewPage.tsx`(周范围切换 + 反思 + 归档) |
+
+#### 测试基线
+
+- frontend unit:**511 passed** / 26 skipped(25 test files,新增 `recurrenceUtils.test.ts`)
+- frontend e2e:108 passed / relay 9 / backend 104(本轮未触及)
+- 首屏 JS gzip ~103KB(≤ 250KB 预算)
+- 全量 verify:typecheck ✅ / build ✅ / vitest ✅
+
+#### Phase 2 剩余(7 项,下一轮)
+
+| # | 任务 | 备注 |
+|---|---|---|
+| 2.4 | Filter DSL(Todoist 风格 `today & p1`) | 复用 `Filter` 类型,加 parser |
+| 2.5 | Cmd+K 命令面板 | 类 Raycast,跨页跳转 + 操作 |
+| 2.6 | Calendar 拖拽改 dueDate | 复用 `@dnd-kit` |
+| 2.7 | 同步扩展(冲突 UI / 暂停 / 强制) | 接通已实现的 conflictResolver |
+| 2.8 | Filter DSL 持久化(保存为视图) | 复用 `View` 类型 |
+| 2.9 | 任务模板 | 类 TickTick |
+| 2.10 | 自定义字段 UI | 复用 `CustomField` 类型 |
+
+详见 [PRODUCT_EVOLUTION_PLAN_v1](./PRODUCT_EVOLUTION_PLAN_v1.md) — Phase 3(差异化,6 项)/ Phase 4(进阶,7 项)。
 
 ---
 

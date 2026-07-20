@@ -114,7 +114,7 @@ Three components, one data model — every record carries `updatedAt`, so the sa
 
 | Component | Stack | What it does |
 | --- | --- | --- |
-| **Web app** (`desktop/`) | Vite · React 18 · Zustand 4 · TypeScript 5 | Local-first browser task manager. Persists to IndexedDB, encrypts the vault with Web Crypto (PBKDF2), and encrypts JSON backups with PBKDF2-SHA256 (600k iterations) + AES-256-GCM. **8 pages + Mosaic timeline view**, vault, sync settings, 6-section Settings (Security / Appearance / Shortcuts / Data / Sync / Danger zone). |
+| **Web app** (`desktop/`) | Vite · React 18 · Zustand 4 · TypeScript 5 | Local-first browser task manager. Persists to IndexedDB, encrypts the vault with Web Crypto (PBKDF2), and encrypts JSON backups with PBKDF2-SHA256 (600k iterations) + AES-256-GCM. **12 pages + Mosaic timeline view** (Today / Calendar / Projects / Project detail / Categories / Tags / Search / Vault / Settings / Kanban / Insights / Weekly Review), reminders, recurrence, subtasks, NLP quick-add, bulk ops, drag-reorder, vim shortcuts, PWA installable, 6-section Settings (Security / Appearance / Shortcuts / Data / Sync / Danger zone). |
 | **Relay** | Node.js 18+ (≥20) · WebSocket · express-rate-limit · Docker | Forwards ciphertext frames only, with an offline queue (7-day TTL). LAN-first, relay as fallback. |
 | **Backend** | Python 3.11+ · FastAPI · PyGit2 | Optional: task/project/category/tag API, git management, plugin system. Decoupled from the sync path. **22 REST endpoints.** |
 
@@ -123,12 +123,14 @@ relay; the relay is just a porter that never decrypts.
 
 ## Pages
 
-The web app ships **8 pages**(Today, Calendar, Projects, Categories, Tags,
-Search, Vault, Settings) plus a Mosaic timeline view. The Kanban / Gantt /
-Timeline / TimeBlock / Table / MindMap views and Templates / Automation /
-Notes / Analytics / Goals / Habits pages described in earlier docs are
-**not yet implemented** — see [Goto Pivot Plan](docs/GOTO_PIVOT_PLAN.md)
-for the rebuild roadmap.
+The web app ships **12 pages** — Today, Calendar, Projects, **Project detail**
+(`/projects/:id`), Categories, Tags, Search, Vault, Settings, **Kanban**,
+**Insights** (statistics dashboard with Karma score), **Weekly Review** —
+plus a Mosaic timeline view. The Gantt / Timeline / TimeBlock / Table /
+MindMap views and Templates / Automation / Notes / Analytics / Goals /
+Habits pages described in earlier docs are **not yet implemented** — see
+[Goto Pivot Plan](docs/GOTO_PIVOT_PLAN.md) and
+[Product Evolution Plan](docs/PRODUCT_EVOLUTION_PLAN_v1.md) for the roadmap.
 
 Task dependencies (`blockedBy` / `blocks`) stop you marking a task done
 when something it's waiting on is still open.
@@ -210,10 +212,20 @@ design spec, and why) live in
 | **Privacy shell** | Lock screen, privacy mode (hide vault), clipboard auto-clear (default 30 s, configurable). |
 | **Danger zone** | Clear all data (keep password & backups) / Factory reset (wipe password, reload to first-run). |
 | **Appearance** | Light / dark / system + font size (small / medium / large). |
-| **Shortcuts** | `?` opens a help overlay. `Mod+L` lock, `Mod+B` sidebar, `Mod+K` search, `/` focus new task, `Mod+N` new task, `Esc` close. |
+| **Shortcuts** | `?` opens a help overlay. `Mod+L` lock, `Mod+B` sidebar, `Mod+K` search, `/` focus new task, `Mod+N` new task, `Esc` close. **Vim-style** `j`/`k`/`e`/`x`/`d`/`gg`/`G` in task list. |
 | **Mosaic view** | A "time tape" rendering of all tasks — timeline-as-mosaic. |
 | **Auto-tag** | Keyword-based plugin (shopping / work / health / study). |
 | **Task deps** | `blockedBy` / `blocks` prevent marking a task done while upstream is open. |
+| **Reminders** | Per-task `reminderDate` triggers a browser Notification (PWA installable, SW wakes in background). |
+| **Recurrence** | Full `RecurrenceRule` editor (daily / weekly / monthly / yearly + interval + daysOfWeek + end-by date/count). Completing a recurring task auto-generates the next instance. |
+| **Subtasks** | Per-task subtask list — add / delete / check / rename in card or editor. |
+| **NLP quick add** | Type "明天 3点 高! 30分钟 #工作 +项目" — parser fills dueDate / priority / estimatedTime / tags / project. |
+| **Bulk ops** | Multi-select tasks → complete / delete / change priority / move to project. |
+| **Drag reorder** | `@dnd-kit`-powered drag to reorder tasks (PointerSensor + KeyboardSensor for a11y). |
+| **Kanban view** | 5 columns (todo / in-progress / waiting / delegated / completed) — drag across columns to change status. |
+| **Insights** | Karma score (Todoist-style 7d×10 + 14d×5, capped at 1000), 14-day completion trend, breakdowns by priority / status / project. |
+| **Weekly review** | Week-at-a-glance (completed / stalled / overdue / due this week / per-project progress) + reflection notes + archive-30d-old button. |
+| **PWA** | Installable (manifest + SVG icons + shortcuts). Workbox caching: assets CacheFirst, app shell NetworkFirst, /api & /ws never cached. |
 | **Plugin system** | Registry + built-in plugins. Backend extends with custom plugins. |
 | **Tests** | 611 total: 494 unit + 108 e2e + 104 backend + 9 relay. |
 
@@ -379,8 +391,9 @@ Full FAQ: [FAQ.md](FAQ.md).
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full roadmap. Highlights:
 
-- ✅ Phase A — Local-first web app (8 pages + Mosaic), E2EE sync, vault, encrypted backups, 6-section Settings, 611 tests green.
-- 🚧 Phase B — Multi-device sync hardening, plugin marketplace, Mosaic interactions.
+- ✅ Phase A — Local-first web app (Mosaic + 8 base pages), E2EE sync, vault, encrypted backups, 6-section Settings, 611 tests green.
+- ✅ Phase 1 + 2 (2026-07-20) — Reminders, recurrence, subtasks, full-field editor, NLP quick-add, bulk ops, drag-reorder, PWA, vim shortcuts, project detail page, Kanban, Insights, Weekly Review. 511 unit tests green. See [CHANGELOG](CHANGELOG.md).
+- 🚧 Phase B — Multi-device sync hardening, plugin marketplace, Mosaic interactions, Filter DSL, Cmd+K, calendar drag-to-schedule.
 - 🔮 Phase C — Cross-platform native shells, optional LLM-assisted tagging (local model).
 
 ## License

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b2d8a"/>
+      <stop offset="100%" stop-color="#1f1b4d"/>
+    </linearGradient>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- 六边形外框 -->
+  <polygon points="256,72 416,168 416,344 256,440 96,344 96,168"
+           fill="none" stroke="url(#g)" stroke-width="14" stroke-linejoin="round"/>
+  <!-- 字母 G -->
+  <path d="M 320 200
+           L 320 256
+           L 264 256
+           M 320 200
+           Q 256 168 208 224
+           Q 184 304 240 336
+           Q 304 360 336 304"
+        fill="none" stroke="url(#g)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 箭头(流动) -->
+  <path d="M 192 376 L 224 376 L 224 360 L 240 384 L 224 408 L 224 392 L 192 392 Z"
+        fill="url(#g)"/>
+  <!-- 锁(加密) -->
+  <rect x="344" y="376" width="40" height="28" rx="4" fill="url(#g)"/>
+  <path d="M 352 376 L 352 364 Q 352 352 364 352 Q 376 352 376 364 L 376 376"
+        fill="none" stroke="url(#g)" stroke-width="4"/>
+</svg>
