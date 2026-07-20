@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Goto — local-first encrypted task workflow">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f1b4d"/>
+      <stop offset="50%" stop-color="#3b2d8a"/>
+      <stop offset="100%" stop-color="#5b3f9e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="hexFill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b2d8a"/>
+      <stop offset="55%" stop-color="#5b3f9e"/>
+      <stop offset="100%" stop-color="#1f1b4d"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- logo -->
+  <g transform="translate(160,160)">
+    <polygon points="160,12 290,87 290,233 160,308 30,233 30,87"
+             fill="url(#hexFill)"
+             stroke="url(#accent)"
+             stroke-width="8"
+             stroke-linejoin="round"/>
+    <path d="M 160 80
+             A 80 80 0 1 0 240 160
+             L 240 160
+             L 200 160"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="18"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <polygon points="200,120 240,160 200,200" fill="url(#accent)"/>
+    <g transform="translate(210,210)">
+      <rect x="0" y="12" width="55" height="40" rx="6" fill="#ffffff"/>
+      <path d="M 10 12 L 10 5 A 17 17 0 0 1 45 5 L 45 12"
+            fill="none" stroke="#ffffff" stroke-width="6"/>
+      <circle cx="27" cy="32" r="5" fill="url(#hexFill)"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <text x="640" y="280"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="140"
+        font-weight="700"
+        fill="#ffffff"
+        letter-spacing="-4">Goto</text>
+
+  <text x="640" y="360"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, monospace"
+        font-size="28"
+        fill="#fbbf24"
+        letter-spacing="3">LOCAL-FIRST · E2EE · WEB</text>
+
+  <text x="640" y="420"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="32"
+        fill="#ffffff"
+        opacity="0.85">Your to-do list doesn't have to live</text>
+
+  <text x="640" y="465"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="32"
+        fill="#ffffff"
+        opacity="0.85">on someone else's server.</text>
+
+  <!-- badges row -->
+  <g transform="translate(640,520)" font-family="ui-monospace, monospace" font-size="20">
+    <rect x="0" y="0" width="160" height="32" rx="16" fill="#ffffff" opacity="0.12"/>
+    <text x="80" y="22" fill="#fbbf24" text-anchor="middle">611 tests</text>
+
+    <rect x="180" y="0" width="200" height="32" rx="16" fill="#ffffff" opacity="0.12"/>
+    <text x="280" y="22" fill="#ffffff" text-anchor="middle">AES-256-GCM</text>
+
+    <rect x="400" y="0" width="160" height="32" rx="16" fill="#ffffff" opacity="0.12"/>
+    <text x="480" y="22" fill="#ffffff" text-anchor="middle">103KB gzip</text>
+  </g>
+</svg>

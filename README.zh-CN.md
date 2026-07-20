@@ -1,5 +1,10 @@
 <div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo.svg">
+  <img src="docs/assets/logo.svg" alt="Goto logo" width="160" height="160">
+</picture>
+
 # Goto
 
 **本地优先、端到端加密的私人时间资产管理器。**
