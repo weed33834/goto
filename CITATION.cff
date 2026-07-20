@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software in academic work, please cite it using the
+  metadata below.
+title: Goto
+authors:
+  - family-names: badhope
+    given-names: badhope
+    alias: badhope
+identifiers:
+  - type: url
+    value: https://gitcode.com/badhope/goto
+license: CNCL-1.0
+type: software
+url: https://gitcode.com/badhope/goto
+repository-code: https://gitcode.com/badhope/goto
+keywords:
+  - local-first
+  - end-to-end-encryption
+  - cross-platform
+  - task-management
+  - privacy
+  - web-crypto
+  - p2p-sync
+  - aes-256-gcm
+  - e2ee
+abstract: >-
+  Goto — a local-first, end-to-end-encrypted, cross-platform task
+  workflow. Three components share one data model: a browser web app
+  (Vite + React 18 + Zustand 4 + TypeScript 5, data persisted to
+  IndexedDB, vault encrypted with Web Crypto / PBKDF2), an optional
+  Python/FastAPI backend, and a self-hostable WebSocket relay that
+  only forwards ciphertext frames. Cross-device sync runs over an
+  E2EE P2P session (Ed25519 identity, X25519 ECDH, HKDF-SHA256,
+  AES-256-GCM, vector-clock conflict resolution). Strict TypeScript
+  end to end; 900+ tests.

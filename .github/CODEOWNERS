@@ -1,0 +1,20 @@
+# CODEOWNERS — default review ownership
+# badhope is the sole owner; replace with team handles in a
+# multi-maintainer setup.
+
+# Default: everything
+*       @badhope
+
+# GitHub configuration
+/.github/        @badhope
+
+# Documentation
+/docs/           @badhope
+/README.md       @badhope
+/CHANGELOG.md    @badhope
+
+# Build / release config
+/package.json    @badhope
+/pnpm-lock.yaml  @badhope
+/pnpm-workspace.yaml @badhope
+/turbo.json      @badhope

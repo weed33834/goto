@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="20"/>
+      <feOffset dx="0" dy="20"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="900" height="600" fill="url(#bg)"/>
+
+  <g transform="translate(60, 50)" filter="url(#shadow)">
+    <rect x="0" y="0" width="240" height="500" rx="32" fill="url(#phone)"/>
+    <rect x="8" y="8" width="224" height="484" rx="24" fill="#F8FAFC"/>
+
+    <g transform="translate(16, 36)">
+      <rect x="0" y="0" width="208" height="40" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="16" font-family="-apple-system, sans-serif" font-size="8" font-weight="600" fill="#3B82F6">📅 日历</text>
+      <rect x="170" y="6" width="32" height="28" rx="6" fill="#3B82F6"/>
+      <text x="186" y="20" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">15</text>
+      <text x="186" y="30" font-family="-apple-system, sans-serif" font-size="6" fill="#FFFFFF" text-anchor="middle">周三</text>
+    </g>
+
+    <g transform="translate(16, 88)">
+      <rect x="0" y="0" width="208" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="16" font-family="-apple-system, sans-serif" font-size="8" font-weight="700" fill="#64748B">M T W T F S S</text>
+      <g transform="translate(10, 22)">
+        <circle cx="14" cy="20" r="12" fill="#3B82F6"/>
+        <text x="14" y="24" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">15</text>
+        <text x="44" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">16</text>
+        <text x="74" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">17</text>
+        <circle cx="104" cy="20" r="3" fill="#EF4444"/>
+        <text x="104" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">18</text>
+        <text x="134" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#94A3B8" text-anchor="middle">19</text>
+        <text x="164" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#94A3B8" text-anchor="middle">20</text>
+        <text x="194" y="24" font-family="-apple-system, sans-serif" font-size="9" fill="#94A3B8" text-anchor="middle">21</text>
+
+        <text x="14" y="50" font-family="-apple-system, sans-serif" font-size="9" fill="#94A3B8" text-anchor="middle">22</text>
+        <circle cx="44" cy="46" r="3" fill="#10B981"/>
+        <text x="44" y="50" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">23</text>
+        <text x="74" y="50" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">24</text>
+        <text x="104" y="50" font-family="-apple-system, sans-serif" font-size="9" fill="#0F172A" text-anchor="middle">25</text>
+      </g>
+    </g>
+
+    <g transform="translate(16, 200)">
+      <rect x="0" y="0" width="208" height="44" rx="10" fill="#3B82F6"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF">10:00 团队周会</text>
+      <text x="10" y="32" font-family="-apple-system, sans-serif" font-size="7" fill="rgba(255,255,255,0.7)">⏱ 60 分钟 · #工作</text>
+    </g>
+
+    <g transform="translate(16, 252)">
+      <rect x="0" y="0" width="208" height="44" rx="10" fill="#FEF3C7" stroke="#F59E0B"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#92400E">14:00 设计评审</text>
+      <text x="10" y="32" font-family="-apple-system, sans-serif" font-size="7" fill="#A16207">⏱ 90 分钟 · #设计</text>
+    </g>
+
+    <g transform="translate(16, 304)">
+      <rect x="0" y="0" width="208" height="44" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#0F172A">16:30 客户沟通</text>
+      <text x="10" y="32" font-family="-apple-system, sans-serif" font-size="7" fill="#94A3B8">⏱ 30 分钟</text>
+    </g>
+  </g>
+
+  <g transform="translate(330, 50)" filter="url(#shadow)">
+    <rect x="0" y="0" width="240" height="500" rx="32" fill="url(#phone)"/>
+    <rect x="8" y="8" width="224" height="484" rx="24" fill="#F8FAFC"/>
+
+    <g transform="translate(16, 36)">
+      <text x="0" y="14" font-family="-apple-system, sans-serif" font-size="14" font-weight="800" fill="#0F172A">数据看板</text>
+      <text x="0" y="28" font-family="-apple-system, sans-serif" font-size="8" fill="#94A3B8">本周任务完成情况</text>
+    </g>
+
+    <g transform="translate(16, 76)">
+      <rect x="0" y="0" width="208" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="8" font-weight="600" fill="#64748B">完成趋势</text>
+
+      <polyline points="20,80 50,60 80,40 110,50 140,30 170,35 200,20"
+                stroke="#3B82F6" stroke-width="2" fill="none"/>
+      <polyline points="20,80 50,60 80,40 110,50 140,30 170,35 200,20 200,90 20,90"
+                stroke="#3B82F6" stroke-width="0" fill="url(#bg)" opacity="0.1"/>
+      <circle cx="20" cy="80" r="3" fill="#3B82F6"/>
+      <circle cx="80" cy="40" r="3" fill="#3B82F6"/>
+      <circle cx="140" cy="30" r="3" fill="#3B82F6"/>
+      <circle cx="200" cy="20" r="4" fill="#10B981"/>
+
+      <text x="20" y="98" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8">周一</text>
+      <text x="200" y="98" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-anchor="end">周日</text>
+    </g>
+
+    <g transform="translate(16, 192)">
+      <rect x="0" y="0" width="100" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#64748B">分类分布</text>
+      <g transform="translate(50, 60)">
+        <circle r="30" fill="none" stroke="#E2E8F0" stroke-width="10"/>
+        <circle r="30" fill="none" stroke="#3B82F6" stroke-width="10" stroke-dasharray="50 130" transform="rotate(-90)"/>
+        <circle r="30" fill="none" stroke="#10B981" stroke-width="10" stroke-dasharray="40 130" stroke-dashoffset="-50" transform="rotate(-90)"/>
+        <circle r="30" fill="none" stroke="#F59E0B" stroke-width="10" stroke-dasharray="30 130" stroke-dashoffset="-90" transform="rotate(-90)"/>
+      </g>
+      <text x="50" y="60" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#0F172A" text-anchor="middle">12</text>
+      <text x="50" y="72" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-anchor="middle">总任务</text>
+    </g>
+
+    <g transform="translate(124, 192)">
+      <rect x="0" y="0" width="100" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#64748B">优先级</text>
+      <rect x="10" y="28" width="80" height="10" rx="2" fill="#FEE2E2"/>
+      <rect x="10" y="28" width="60" height="10" rx="2" fill="#EF4444"/>
+      <text x="10" y="48" font-family="-apple-system, sans-serif" font-size="7" fill="#0F172A">紧急 75%</text>
+
+      <rect x="10" y="56" width="80" height="10" rx="2" fill="#FEF3C7"/>
+      <rect x="10" y="56" width="40" height="10" rx="2" fill="#F59E0B"/>
+      <text x="10" y="76" font-family="-apple-system, sans-serif" font-size="7" fill="#0F172A">高 50%</text>
+    </g>
+
+    <g transform="translate(16, 308)">
+      <rect x="0" y="0" width="208" height="44" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="10" y="18" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#0F172A">🔥 连续 7 天</text>
+      <text x="10" y="32" font-family="-apple-system, sans-serif" font-size="7" fill="#94A3B8">保持节奏！</text>
+      <text x="180" y="28" font-family="-apple-system, sans-serif" font-size="14" font-weight="800" fill="#10B981" text-anchor="end">+24%</text>
+    </g>
+  </g>
+
+  <g transform="translate(600, 50)" filter="url(#shadow)">
+    <rect x="0" y="0" width="240" height="500" rx="32" fill="url(#phone)"/>
+    <rect x="8" y="8" width="224" height="484" rx="24" fill="#F8FAFC"/>
+
+    <g transform="translate(16, 36)">
+      <text x="0" y="14" font-family="-apple-system, sans-serif" font-size="14" font-weight="800" fill="#0F172A">看板视图</text>
+      <text x="0" y="28" font-family="-apple-system, sans-serif" font-size="8" fill="#94A3B8">按状态分组</text>
+    </g>
+
+    <g transform="translate(16, 76)">
+      <rect x="0" y="0" width="60" height="380" rx="10" fill="#F1F5F9"/>
+      <text x="30" y="16" font-family="-apple-system, sans-serif" font-size="8" font-weight="700" fill="#64748B" text-anchor="middle">待办</text>
+      <text x="30" y="28" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-anchor="middle">3</text>
+
+      <rect x="6" y="36" width="48" height="40" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="6" y="36" width="3" height="40" fill="#EF4444"/>
+      <text x="12" y="50" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#0F172A">Q2 报告</text>
+      <text x="12" y="62" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8">📅 今天</text>
+      <text x="12" y="72" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8">👤 @Alice</text>
+
+      <rect x="6" y="84" width="48" height="36" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="12" y="98" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#0F172A">设计评审</text>
+      <text x="12" y="110" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8">📅 明天</text>
+
+      <rect x="6" y="128" width="48" height="32" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="12" y="142" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#0F172A">回邮件</text>
+    </g>
+
+    <g transform="translate(82, 76)">
+      <rect x="0" y="0" width="60" height="380" rx="10" fill="#F1F5F9"/>
+      <text x="30" y="16" font-family="-apple-system, sans-serif" font-size="8" font-weight="700" fill="#64748B" text-anchor="middle">进行中</text>
+      <text x="30" y="28" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-anchor="middle">2</text>
+
+      <rect x="6" y="36" width="48" height="36" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="6" y="36" width="3" height="36" fill="#F59E0B"/>
+      <text x="12" y="50" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#0F172A">数据整理</text>
+      <text x="12" y="62" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8">⏱ 50%</text>
+
+      <rect x="6" y="80" width="48" height="32" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="12" y="94" font-family="-apple-system, sans-serif" font-size="7" font-weight="600" fill="#0F172A">API 重构</text>
+    </g>
+
+    <g transform="translate(148, 76)">
+      <rect x="0" y="0" width="60" height="380" rx="10" fill="#F1F5F9"/>
+      <text x="30" y="16" font-family="-apple-system, sans-serif" font-size="8" font-weight="700" fill="#10B981" text-anchor="middle">已完成</text>
+      <text x="30" y="28" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-anchor="middle">5</text>
+
+      <rect x="6" y="36" width="48" height="28" rx="6" fill="#FFFFFF" stroke="#E2E8F0" opacity="0.6"/>
+      <text x="12" y="48" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-decoration="line-through">客户对接</text>
+      <text x="12" y="58" font-family="-apple-system, sans-serif" font-size="5" fill="#94A3B8">✓ 昨天</text>
+
+      <rect x="6" y="72" width="48" height="28" rx="6" fill="#FFFFFF" stroke="#E2E8F0" opacity="0.6"/>
+      <text x="12" y="84" font-family="-apple-system, sans-serif" font-size="6" fill="#94A3B8" text-decoration="line-through">技术调研</text>
+    </g>
+  </g>
+
+  <g transform="translate(60, 30)">
+    <text x="0" y="0" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#64748B">📅 日历视图</text>
+  </g>
+  <g transform="translate(330, 30)">
+    <text x="0" y="0" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#64748B">📊 统计分析</text>
+  </g>
+  <g transform="translate(600, 30)">
+    <text x="0" y="0" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#64748B">📋 看板视图</text>
+  </g>
+  <g transform="translate(60, 575)">
+    <text x="0" y="0" font-family="-apple-system, sans-serif" font-size="9" fill="#94A3B8">6 种视图：看板 · 甘特图 · 时间线 · 表格 · 时间块 · 思维导图</text>
+  </g>
+</svg>

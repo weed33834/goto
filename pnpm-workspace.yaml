@@ -1,0 +1,5 @@
+# A6 pnpm workspace(见 §5 Phase A 路线图)
+# desktop = Electron + Web renderer;relay = 自部署同步中继服务
+packages:
+  - 'desktop'
+  - 'relay'

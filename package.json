@@ -1,0 +1,22 @@
+{
+  "name": "goto-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Goto - Local-first encrypted personal schedule manager (monorepo root)",
+  "license": "CNCL-1.0",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev --parallel"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  }
+}

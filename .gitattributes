@@ -1,0 +1,61 @@
+# Auto-detect text files and normalize line endings to LF on commit.
+*               text=auto eol=lf
+
+# Shell scripts must keep LF.
+*.sh            text eol=lf
+
+# Windows scripts must keep CRLF.
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# Python: enforce LF.
+*.py            text eol=lf
+
+# JS/TS/Web: enforce LF.
+*.js            text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.jsx           text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.json          text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.toml          text eol=lf
+*.md            text eol=lf
+*.xml           text eol=lf
+*.svg           text eol=lf
+
+# Lockfiles: keep as-is, no normalization.
+*.lock          -text
+package-lock.json -text
+
+# Binary files: do not diff.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
+*.pdf           binary
+*.zip           binary
+*.tar           binary
+*.gz            binary
+*.tgz           binary
+
+# Linguist overrides: mark vendored / generated / docs correctly.
+docs/*          linguist-documentation
+CHANGELOG.md    linguist-documentation
+CONTRIBUTING.md  linguist-documentation
+CODE_OF_CONDUCT.md linguist-documentation
+SECURITY.md     linguist-documentation
+LICENSE         linguist-vendored
+.github/        linguist-documentation
+*.min.js        linguist-generated
+*.min.css       linguist-generated
+*_pb2.py        linguist-generated
+*_pb2_grpc.py   linguist-generated
+/dist/          linguist-generated
+/build/         linguist-generated
+/node_modules/  linguist-vendored

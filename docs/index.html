@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TaskFlow — 本地优先的加密任务工作流</title>
+<meta name="description" content="TaskFlow：本地优先、端到端加密的浏览器任务工作流。Web 应用 + 自托管中继,数据始终在你手里。" />
+<style>
+  :root {
+    --paper: #f7f4ed;
+    --paper-2: #efeae0;
+    --ink: #1a1a1a;
+    --ink-soft: #3a3a38;
+    --muted: #6b6862;
+    --rule: #d9d3c4;
+    --accent: #9b3a2a;
+    --accent-soft: #c25a3f;
+    --code-bg: #ece7da;
+    --ok: #3a6b4a;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* masthead */
+  .masthead {
+    padding: 56px 0 28px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .masthead .kicker {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  .masthead h1 {
+    font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+    font-weight: 700;
+    font-size: clamp(2.6rem, 7vw, 3.6rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+    line-height: 1.05;
+  }
+  .masthead .lede {
+    font-size: 1.18rem;
+    color: var(--ink-soft);
+    max-width: 38em;
+    margin: 0;
+  }
+  .meta-bar {
+    margin-top: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .meta-bar b { color: var(--ink); font-weight: 600; }
+
+  /* sections */
+  section {
+    padding: 40px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  section:last-of-type { border-bottom: none; }
+  h2 {
+    font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin: 0 0 18px;
+    letter-spacing: -0.01em;
+  }
+  h2 .num {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.7em;
+    color: var(--accent);
+    font-weight: 500;
+    margin-right: 12px;
+    vertical-align: 0.08em;
+  }
+  h3 {
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin: 24px 0 6px;
+    color: var(--ink);
+  }
+  p { margin: 0 0 14px; }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 650; }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(155, 58, 42, 0.35);
+    transition: border-color 0.15s;
+  }
+  a:hover { border-bottom-color: var(--accent); }
+  .quiet { color: var(--muted); }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 1.5px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 16px 18px;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    font-size: 0.84rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; }
+
+  ul, ol { padding-left: 1.3em; }
+  li { margin-bottom: 6px; }
+
+  /* architecture diagram */
+  .arch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 22px 0 8px;
+  }
+  .arch .node {
+    border: 1px solid var(--ink);
+    background: var(--paper-2);
+    padding: 14px 16px;
+    border-radius: 4px;
+  }
+  .arch .node .nh {
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+  }
+  .arch .node .nh .tag {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-left: 6px;
+    letter-spacing: 0.04em;
+  }
+  .arch .node .nd {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .arch .relay {
+    grid-column: 1 / -1;
+    border-style: dashed;
+    border-color: var(--accent);
+    background: rgba(155, 58, 42, 0.04);
+  }
+  .arch-caption {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 10px;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* protocol stack */
+  .stack {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 18px 0;
+  }
+  .stack .layer {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stack .layer:last-child { border-bottom: none; }
+  .stack .layer .lh {
+    background: var(--code-bg);
+    padding: 10px 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-weight: 600;
+    border-right: 1px solid var(--rule);
+  }
+  .stack .layer .lb {
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  /* stat grid */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 18px 0;
+  }
+  .stats .stat {
+    background: var(--paper);
+    padding: 18px 18px;
+  }
+  .stats .stat .v {
+    font-family: Georgia, serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .stats .stat .l {
+    font-size: 0.84rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* tech table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.94rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  td:first-child { font-weight: 600; }
+
+  /* repos */
+  .repos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .repo-card {
+    border: 1px solid var(--ink);
+    padding: 20px;
+    border-radius: 4px;
+    background: var(--paper-2);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .repo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 -3px var(--ink);
+  }
+  .repo-card .rh {
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .repo-card .rh .host {
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-left: 8px;
+    letter-spacing: 0.05em;
+  }
+  .repo-card .ru {
+    font-family: ui-monospace, monospace;
+    font-size: 0.86rem;
+    color: var(--accent);
+    word-break: break-all;
+    border: none;
+  }
+  .repo-card a { border: none; display: block; }
+  .repo-card .rd {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  footer {
+    padding: 40px 0 60px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-family: ui-monospace, monospace;
+    border-top: 1px solid var(--rule);
+    margin-top: 0;
+  }
+  footer .sig {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 20px; }
+    .masthead { padding: 40px 0 22px; }
+    .arch { grid-template-columns: 1fr; }
+    .repos { grid-template-columns: 1fr; }
+    .stack .layer { grid-template-columns: 1fr; }
+    .stack .layer .lh { border-right: none; border-bottom: 1px solid var(--rule); }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">Field Notes · v1.2.0 · 2026-07</p>
+    <h1>TaskFlow</h1>
+    <p class="lede">
+      一个本地优先、端到端加密、跨平台的任务工作流。你的待办不必交给别人保管——
+      数据在你的设备上，同步在你信任的设备间进行。
+    </p>
+    <div class="meta-bar">
+      <span><b>v0.0.1</b></span>
+      <span>测试 <b>611</b> 项全绿</span>
+      <span>Web 应用 + 自托管中继</span>
+      <span>两轮安全审计</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <h2><span class="num">01</span>它解决什么</h2>
+  <p>
+    市面上的任务管理工具大致分两类：一类是纯本地待办，单机好用但换设备就抓瞎；
+    一类是云同步，方便却把你的每一项计划、习惯、笔记都放进别人服务器。
+    TaskFlow 选第三条路——<strong>数据默认在本地，跨设备同步时端到端加密</strong>，
+    中继服务只搬运密文，看不到任何内容。
+  </p>
+  <p>
+    这不是因为我们做不出云同步，而是任务管理这件事没必要把你的生活细节
+    交给第三方保管。代价是多花了不少功夫在加密协议和冲突解决上，换来的是：
+    没有 TaskFlow 账号这回事，也没有人能从服务器读出你的待办。
+  </p>
+  <p class="quiet">
+    当前形态:浏览器 Web 应用(Vite + React 18)、可选的 Python 后端、可自托管的 Node 中继。
+    同步协议两端字节级互通。
+  </p>
+</section>
+
+<section>
+  <h2><span class="num">02</span>三个组件,一种数据</h2>
+  <div class="arch">
+    <div class="node">
+      <div class="nh">Web 应用 <span class="tag">Vite · React 18 · Zustand 4</span></div>
+      <div class="nd">8 个页面 + 时间织锦视图。IndexedDB 本地存储 + Web Crypto 字段级 AES-256-GCM。隐私外壳 + 修改主密码 + 危险区数据销毁。</div>
+    </div>
+    <div class="node relay">
+      <div class="nh">中继 Relay <span class="tag">Node.js · WebSocket · 自托管</span></div>
+      <div class="nd">只转发密文帧,带离线队列(7 天 TTL)。LAN 可达时优先直连,不可达才走中继。</div>
+    </div>
+    <div class="node">
+      <div class="nh">后端 <span class="tag">Python · FastAPI</span></div>
+      <div class="nd">可选组件:任务 / 项目 / 分类 / 标签 API。与同步链路解耦。</div>
+    </div>
+  </div>
+  <p class="arch-caption">
+    Web 应用 ⇄ Web 应用:端到端加密 P2P,中继仅作穿墙搬运工,全程不解密。
+  </p>
+</section>
+
+<section>
+  <h2><span class="num">03</span>端到端加密同步</h2>
+  <p>
+    这是项目里花时间最多的一块。两台设备同步前先握手，互相验明身份，
+    协商出一对方向隔离的会话密钥，之后所有记录都用 AES-256-GCM 加密。
+    中继看到的只是密文字节流。
+  </p>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="lh">身份层</div>
+      <div class="lb">每台设备一对 Ed25519 长期密钥，私钥存 Keychain / Keystore。设备 ID = sha256(原始公钥) 前 16 hex。</div>
+    </div>
+    <div class="layer">
+      <div class="lh">握手层</div>
+      <div class="lb">X25519 临时密钥做 ECDH，双方对 <code>deviceId ‖ peerDeviceId ‖ nonce ‖ peerNonce ‖ ecdhPub</code> 做 Ed25519 签名，防中间人。</div>
+    </div>
+    <div class="layer">
+      <div class="lh">派生层</div>
+      <div class="lb">HKDF-SHA256 从 ECDH 共享密钥派生 <code>sendKey / receiveKey</code>，info 按角色方向绑定：<code>taskflow-sync-v1|initiator→responder</code>。</div>
+    </div>
+    <div class="layer">
+      <div class="lh">记录层</div>
+      <div class="lb">同步主密钥（SMK）做 AES-256-GCM 对称加密。线格式 <code>iv[12] ‖ authTag[16] ‖ ciphertext</code>，IV 每次随机。</div>
+    </div>
+    <div class="layer">
+      <div class="lh">冲突层</div>
+      <div class="lb">先比 updatedAt（last-write-wins），时间戳相等时用版本向量做因果偏序判定，判定为 concurrent 时按策略收口。</div>
+    </div>
+    <div class="layer">
+      <div class="lh">传输层</div>
+      <div class="lb">9 种消息类型，帧格式 <code>mode[1] ‖ length[4 BE] ‖ payload</code>。重放保护用序列号 + 滑动窗口，握手 30s 超时。</div>
+    </div>
+  </div>
+
+  <p>
+    Web 应用统一用 Web Crypto API,线格式 AES-GCM 的 authTag 位置做了显式对齐,
+    <strong>跨设备字节级互操作已用 611 项测试中的双向用例验证</strong>——一台设备加密的帧
+    另一台能解,反之亦然。
+    <br><small>(截至 2026-07-20,测试总数 611 项:Web unit 494 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9,覆盖同步协议、备份加密、冲突解决、配对握手等。)</small>
+  </p>
+</section>
+
+<section>
+  <h2><span class="num">04</span>隐私不是开关,是默认</h2>
+  <ul>
+    <li><strong>本地优先存储</strong>:Web 应用数据落 IndexedDB,密钥经 PBKDF2-SHA256 600k 迭代派生,主密码不存盘,仅以 verifier 形式保存。</li>
+    <li><strong>字段级加密</strong>:保险库敏感字段叠加 AES-256-GCM,带密码生成器。</li>
+    <li><strong>密码错误 cooldown</strong>:连续 3 次错误密码后强制 30 秒锁定,防暴力枚举。</li>
+    <li><strong>修改主密码</strong>:设置页可在线修改主密码,验证旧密码 → 写新 verifier → 清空密钥缓存。</li>
+    <li><strong>剪贴板自动清除</strong>:复制保险库字段后默认 30 秒自动清除,可配置时长,复制按钮显示倒计时。</li>
+    <li><strong>自动锁屏</strong>:可设置 0 / 1 / 5(默认) / 15 / 30 / 60 分钟无操作自动锁定,或窗口失焦立即锁。</li>
+    <li><strong>隐私外壳</strong>:启动锁、自动锁屏、隐私模式、剪贴板清空、快捷键浮层(`?` 触发)。</li>
+    <li><strong>危险区数据销毁</strong>:清空数据(保留主密码与备份) / 恢复出厂设置(删主密码,重启到首次安装状态),二次确认,不可撤销。</li>
+  </ul>
+  <p class="quiet">
+    两轮独立安全审计（TF-001~019、TF2-001~017）覆盖 CORS、密钥熵、备份元数据、
+    LLM 脱敏、API token 注入等，大部分已修复，剩余项在路线图跟踪。
+  </p>
+</section>
+
+<section>
+  <h2><span class="num">05</span>用数字说话</h2>
+  <div class="stats">
+    <div class="stat">
+      <div class="v">611</div>
+      <div class="l">测试 · 全绿</div>
+    </div>
+    <div class="stat">
+      <div class="v">649<span style="font-size:1rem">ms</span></div>
+      <div class="l">5000 条端到端同步</div>
+    </div>
+    <div class="stat">
+      <div class="v">7699</div>
+      <div class="l">rec/s 吞吐</div>
+    </div>
+    <div class="stat">
+      <div class="v">80×</div>
+      <div class="l">批量落库提速</div>
+    </div>
+    <div class="stat">
+      <div class="v">9</div>
+      <div class="l">种同步消息类型</div>
+    </div>
+    <div class="stat">
+      <div class="v">8</div>
+      <div class="l">个页面 + 时间织锦</div>
+    </div>
+  </div>
+  <p class="quiet">
+    5000 条同步从 52 秒优化到 0.65 秒,靠的是修掉 REQUEST 分块 bug 加事务化批量落库。
+    测试覆盖:Web unit 494 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9。
+  </p>
+</section>
+
+<section>
+  <h2><span class="num">06</span>能看到什么</h2>
+  <p>Web 应用提供 8 个页面 + 时间织锦视图,基于同一份数据,按场景切换:</p>
+  <ul>
+    <li><strong>Today</strong> — 今日 / 逾期 / 即将到期 / 全部四个 tab,空态文案分类定制。</li>
+    <li><strong>Calendar</strong> — 月历视图,任务按截止日期分布。</li>
+    <li><strong>Projects / Categories / Tags</strong> — 三层组织维度,支持颜色与图标。</li>
+    <li><strong>Search</strong> — 全文搜索任务标题与描述,带搜索历史。</li>
+    <li><strong>Vault</strong> — 加密保险库,字段级 AES-256-GCM,复制后定时清剪贴板。</li>
+    <li><strong>Mosaic</strong> — 时间织锦,每日落砖,Canvas 渲染,悬停高亮。</li>
+    <li><strong>Settings</strong> — 安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区六分区。</li>
+    <li><strong>任务依赖</strong> — <code>blockedBy / blocks</code>,被阻塞的任务不让你点完成。</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">07</span>技术栈</h2>
+  <table>
+    <thead><tr><th>组件</th><th>选型</th></tr></thead>
+    <tbody>
+      <tr><td>Web 应用</td><td>Vite 6 · React 18 · TypeScript 5 · Zustand 4 · Tailwind 3 · framer-motion · lucide-react</td></tr>
+      <tr><td>数据存储</td><td>IndexedDB · Web Crypto API · PBKDF2-SHA256 600k + AES-256-GCM</td></tr>
+      <tr><td>后端(可选)</td><td>Python 3.11+ · FastAPI · PyGit2</td></tr>
+      <tr><td>中继</td><td>Node.js 18+ · WebSocket · express-rate-limit · Docker 自托管</td></tr>
+      <tr><td>测试</td><td>Vitest(Web unit / Relay)· Playwright(Web e2e)· pytest + Hypothesis(后端)</td></tr>
+      <tr><td>安全</td><td>CodeQL · Gitleaks · OSSF Scorecard · cosign 签名发布</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">08</span>仓库</h2>
+  <p>项目主要托管在 GitCode(国内可访问),所有 Issue 和 PR 请在 GitCode 提交。</p>
+  <div class="repos">
+    <a class="repo-card" href="https://gitcode.com/badhope/goto">
+      <div class="rh">GitCode<span class="host">badhope/goto</span></div>
+      <div class="ru">gitcode.com/badhope/goto</div>
+      <div class="rd">主仓库 · CI / Release / Issues</div>
+    </a>
+  </div>
+  <p style="margin-top:18px;" class="quiet">
+    本页只是介绍。要看代码、跑起来、提 issue,请到上面仓库。
+    本地启动:<code>git clone</code> 后 <code>cd desktop && pnpm install</code>,
+    <code>pnpm dev</code> 浏览器预览(默认 5173),<code>pnpm build</code> 出静态 SPA。
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="sig">TaskFlow</div>
+    本地优先 · 端到端加密 · 跨平台<br />
+    页面托管于 GitHub Pages，源码见仓库 <code>docs/index.html</code>。
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* A11 Motion Token CSS 变量(非 Tailwind 场景复用,见 §7.2) */
+:root {
+  --goto-duration-instant: 50ms;
+  --goto-duration-fast: 100ms;
+  --goto-duration-normal: 200ms;
+  --goto-duration-slow: 400ms;
+  --goto-duration-cinematic: 600ms;
+
+  --goto-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --goto-ease-emphasized: cubic-bezier(0.2, 0, 0, 1.4);
+  --goto-ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --goto-ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+  /* 8 色受限调色板(见 §7.3) */
+  --goto-ink: #0E1117;
+  --goto-paper: #F8FAFC;
+  --goto-gold: #E8C56C;
+  --goto-seal: #C75D4F;
+  --goto-olive: #7B8B3D;
+  --goto-teal: #3D7B8B;
+
+  /* 暗色模式砖亮度反向修正(见 §7.3,亮色 100% / 暗色 130%) */
+  --goto-brick-lightness: 100%;
+
+  /* P1-3:字体大小由 userPreferences.displaySettings.fontSize 控制,
+     通过 root font-size 缩放所有 rem-based Tailwind 工具类。
+     medium 是默认值,与浏览器默认一致;small/large 等比例缩放。
+     注意:移动端 input 仍强制 ≥16px 防 iOS Safari 自动缩放(见下方规则)。 */
+  font-size: 16px;
+}
+
+/* 字体大小档位(data-font-size 由 App.tsx 根据 userPreferences 设置) */
+:root[data-font-size='small'] {
+  font-size: 14px;
+}
+:root[data-font-size='medium'] {
+  font-size: 16px;
+}
+:root[data-font-size='large'] {
+  font-size: 18px;
+}
+
+html.dark {
+  --goto-brick-lightness: 130%;
+}
+
+/* 尊重 prefers-reduced-motion(§7.6 a11y) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 触摸设备优化:粗指针下增大点击区域,移除 hover-only 交互依赖 */
+@media (pointer: coarse) {
+  /* 显式标记的触摸目标至少 44×44px(WCAG 2.5.5 Target Size)
+     不全局应用到所有 button,避免破坏紧凑内联按钮(如标签 chip 的 ✕) */
+  [data-touch-target] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* checkbox/radio 触摸友好 */
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+  /* 移除 hover-only 的下拉提示,避免触摸设备上悬停态卡住 */
+  .hover-only {
+    display: none;
+  }
+}
+
+/* 抽屉打开时锁定 body 滚动(配合 Sidebar 移动端模式) */
+body.sidebar-drawer-open {
+  overflow: hidden;
+  /* 防止 iOS Safari 橡皮筋滚动 */
+  position: fixed;
+  width: 100%;
+}
+
+body {
+  @apply bg-surface text-slate-800 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* 防止移动端横向滚动泄漏 */
+  overflow-x: hidden;
+  /* iOS Safari 100vh 修正:用 -webkit-fill-available 填满视口 */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+html.dark body {
+  @apply bg-slate-900 text-slate-100;
+}
+
+/* 防止移动端 input 缩放:iOS Safari 在 font-size < 16px 时聚焦会自动放大 */
+@media (max-width: 767px) {
+  input[type='text'],
+  input[type='password'],
+  input[type='email'],
+  input[type='search'],
+  input[type='date'],
+  input[type='number'],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* 自定义滚动条(桌面端美观,移动端隐藏减少视觉干扰) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.4);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184 / 0.6);
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    background: rgb(71 85 105 / 0.5);
+  }
+}
+
+/* safe-area-inset 支持(刘海屏/底部 Home Indicator) */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-area-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

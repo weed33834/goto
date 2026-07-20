@@ -1,0 +1,5 @@
+# 把你的证书放这里：
+#   fullchain.pem  - 证书链（含中间证书）
+#   privkey.pem    - 私钥
+#
+# 不要把这两个文件提交到 git。.gitignore 已忽略整个 deploy/certs/ 目录。

@@ -1,0 +1,48 @@
+{
+  "name": "goto-desktop",
+  "version": "0.1.1",
+  "description": "Goto - Local-first encrypted personal schedule and sensitive information manager",
+  "private": true,
+  "license": "CNCL-1.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.renderer.json",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "framer-motion": "^12.42.2",
+    "hash-wasm": "^4.12.0",
+    "lucide-react": "^0.460.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.4",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.57.0",
+    "@playwright/test": "^1.61.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "globals": "^15.0.0",
+    "jsdom": "^29.1.1",
+    "knip": "^5.88.1",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.0",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.9"
+  }
+}

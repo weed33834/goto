@@ -1,0 +1,59 @@
+# Goto Relay 自托管部署编排文件
+#
+# 用法：
+#   1. 仅起 relay（直接暴露 8787，本地/内网）：docker compose up -d
+#   2. relay + Nginx 反代（带 TLS，公网）：docker compose --profile tls up -d
+#
+# relay 始终把 8787 映射到宿主机。走 tls profile 时，Nginx 接管 80/443 对外，
+# 此时建议在防火墙屏蔽 8787 的公网访问，强制流量走 TLS。
+# 公网对外地址由 PUBLIC_WS_URL 决定，relay 内部仍只监听容器端口。
+
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: goto-relay:latest
+    container_name: goto-relay
+    restart: unless-stopped
+    environment:
+      # 监听容器内所有网卡，端口固定 8787。
+      PORT: "8787"
+      HOST: "0.0.0.0"
+      # 客户端最终连接的 WebSocket 地址。走反代时写成 wss://relay.example.com/sync。
+      # 默认空字符串，需在 .env 或 compose 启动参数中显式设置。
+      PUBLIC_WS_URL: ${PUBLIC_WS_URL:-}
+      NODE_ENV: production
+    ports:
+      - "${RELAY_HOST_PORT:-8787}:8787"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    cpus: '1.0'
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: goto-relay-nginx
+    restart: unless-stopped
+    profiles: ["tls"]
+    depends_on:
+      - relay
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # 反代 + WebSocket 升级头配置
+      - ./deploy/nginx/relay.conf:/etc/nginx/conf.d/relay.conf:ro
+      # 证书挂载点：把宿主机的证书目录挂进来
+      - ./deploy/certs:/etc/nginx/certs:ro
+      # Let's Encrypt webroot 挑战目录（acme.sh / certbot 共用）
+      - ./deploy/acme:/var/www/acme:ro
