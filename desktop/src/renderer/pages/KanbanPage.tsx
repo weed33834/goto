@@ -62,7 +62,7 @@ function DraggableTask({ task }: { task: Task }) {
   );
 }
 
-function Column({
+function KanbanColumn({
   column,
   tasks,
 }: {
@@ -206,7 +206,7 @@ export function KanbanPage() {
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
         <div className="flex flex-1 gap-3 overflow-x-auto pb-2">
           {COLUMNS.map((col) => (
-            <Column key={col.id} column={col} tasks={grouped[col.id]} />
+            <KanbanColumn key={col.id} column={col} tasks={grouped[col.id]} />
           ))}
         </div>
       </DndContext>

@@ -37,6 +37,16 @@ test.describe('数据导入导出', () => {
     await expect(page.getByRole('button', { name: '导入 JSON' })).toBeVisible();
   });
 
+  // P1-1:第三方数据导入入口可见性 + 文件 input 默认隐藏
+  test('P1-1:"从其他应用导入"卡片与按钮可见,input 隐藏', async ({ page }) => {
+    await expect(page.getByText('从其他应用导入')).toBeVisible();
+    await expect(page.getByRole('button', { name: '选择文件导入' })).toBeVisible();
+    // input 是 hidden,不参与 tab 顺序,也不可见
+    const fileInput = page.locator('input[type="file"]').first();
+    await expect(fileInput).toBeHidden();
+    await expect(fileInput).toHaveAttribute('aria-label', '选择 Todoist CSV 或 TickTick JSON 文件');
+  });
+
   test('导出备份:prompt 输入密码 → 显示反馈消息', async ({ page }) => {
     await page.evaluate(() => {
       window.prompt = () => 'test-password-123';

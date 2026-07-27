@@ -28,8 +28,18 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     due_date: Optional[datetime] = None
+    due_time: Optional[datetime] = None
     start_date: Optional[datetime] = None
+    start_time: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     reminder_date: Optional[datetime] = None
+    # GTD 维度,与前端 EnergyLevel / TaskContext 对齐
+    energy_level: Optional[Literal['low', 'medium', 'high']] = None
+    context: Optional[str] = None
+    # 重复规则 / 设备版本向量 / 地点,均以 Any 透传(JSON 文本存储)
+    recurrence: Optional[Any] = None
+    device_version: Optional[dict[str, int]] = None
+    location: Optional[Any] = None
     # priority/status 枚举与移动端 (src/shared/types/index.ts) 及桌面端
     # (desktop/src/shared/types.ts) 对齐，三端一致。
     priority: Literal['low', 'medium', 'high', 'urgent', 'critical'] = "medium"
@@ -76,8 +86,16 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     due_date: Optional[datetime] = None
+    due_time: Optional[datetime] = None
     start_date: Optional[datetime] = None
+    start_time: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     reminder_date: Optional[datetime] = None
+    energy_level: Optional[Literal['low', 'medium', 'high']] = None
+    context: Optional[str] = None
+    recurrence: Optional[Any] = None
+    device_version: Optional[dict[str, int]] = None
+    location: Optional[Any] = None
     priority: Optional[Literal['low', 'medium', 'high', 'urgent', 'critical']] = None
     status: Optional[
         Literal[
@@ -207,6 +225,9 @@ class CategoryResponse(CategoryBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    # 由 tasks 路由聚合查询填入，未传时退回 0（兼容老客户端）。
+    # 与前端 desktop/src/shared/types.ts Category.taskCount 字段对齐。
+    task_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -228,6 +249,11 @@ class TagUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     icon: Optional[str] = None
+    # is_system / usage_count 之前缺失,导致前端 Tag 类型中 isSystem / usageCount
+    # 字段无法通过 PATCH 修改或同步（B-5）。usage_count 主要由后端在任务增删时
+    # 自动维护,但允许管理员手动校正（例如导入数据后回填）。
+    is_system: Optional[bool] = None
+    usage_count: Optional[int] = None
     created_by: Optional[str] = None
 
 

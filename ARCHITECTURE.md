@@ -4,16 +4,12 @@ Notes for someone reading the code for the first time. Read this
 top-to-bottom for the tour; the table of contents below is for
 navigation.
 
-> **Architecture reality check**: Goto is currently a **pure
-> browser Web application** plus a backend API and a relay service.
-> There is **no** React Native / Expo mobile app and **no** Electron
-> desktop shell in this repository. The Web app (`desktop/`) is a Vite
-> + React 18 single-page app; it persists to **IndexedDB** (not
-> SQLite/SQLCipher) and performs encryption in the browser via the
-> **Web Crypto API** (AES-256-GCM, key derived from the master password
-> with PBKDF2-SHA256). Older docs that mention "mobile", "Electron",
-> "SQLCipher", "AsyncStorage", or `app.config.ts` describe a previously
-> removed architecture and are obsolete.
+Goto is a **pure browser Web application** plus a backend API and a
+relay service. The Web app (`desktop/`) is a Vite + React 18
+single-page app; it persists to **IndexedDB** and performs encryption
+in the browser via the **Web Crypto API** (AES-256-GCM, key derived
+from the master password with argon2id; legacy PBKDF2-SHA256 verifiers
+and backups are recognized for read-only migration).
 
 ## Contents
 
@@ -100,11 +96,11 @@ Zustand store to **IndexedDB** (via `renderer/lib/webAPI.ts` and the
 storage helpers in `shared/utils/`). The *vault* (sensitive fields) is
 additionally encrypted **in the browser**:
 
-- Master key derived from the master password via **PBKDF2-SHA256**.
+- Master key derived from the master password via **argon2id**
+  (m=64MB, t=3, p=4). Legacy PBKDF2-SHA256 verifiers are recognized
+  for read-only migration and upgraded to argon2id on next unlock.
 - Vault records encrypted with **AES-256-GCM** (Web Crypto API).
-- Without the master password the vault ciphertext is unusable; there
-  is no OS biometric gate in the Web build (no Touch ID / Windows Hello
-  in-browser — that was an Electron-era feature and does not exist here).
+- Without the master password the vault ciphertext is unusable.
 
 The backend, by contrast, stores data server-side and authenticates with
 a **Bearer token read from a local file** (`get_or_create_api_token`).
@@ -161,7 +157,7 @@ handshake   HELLO → OFFER → ANSWER.
             to bind identity into the transcript (MITM resistance).
 
 derive      HKDF-SHA256 from the ECDH shared secret, info =
-            'taskflow-sync-v1|initiator→responder' (role-bound).
+            'goto-sync-v2|initiator→responder' (role-bound).
             Two keys: sendKey / receiveKey, direction-isolated.
 
 records     Sync Master Key (SMK) does AES-256-GCM.
@@ -263,4 +259,4 @@ the UI.
 - IDs are `nanoid`-style strings. Don't try to make them short.
 - Comments explain *why*, not *what*.
 - The Web app builds to `desktop/dist/renderer` (Vite `outDir`). Deploy
-  that directory to GitHub Pages (see `.github/workflows/web-deploy.yml`).
+  that directory to GitHub Pages (CI 配置见 `.github/workflows/ci.yml`)。

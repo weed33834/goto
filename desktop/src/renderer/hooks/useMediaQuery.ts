@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 /**
  * useMediaQuery — 订阅 matchMedia 响应式断点。
  *
- * 与 useResponsiveLayout 不同,本 hook 基于 CSS media query 而非 window.innerWidth 轮询,
+ * 基于 CSS media query 而非 window.innerWidth 轮询,
  * 避免与 Tailwind 默认断点(sm:640/md:768/lg:1024/xl:1280)口径不一致的问题。
  *
  * 用法:

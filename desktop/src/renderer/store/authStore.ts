@@ -15,7 +15,6 @@ interface AuthState {
     oldPassword: string,
     newPassword: string,
   ) => Promise<{ success: boolean; message: string }>;
-  unlockWithBiometric: () => Promise<boolean>;
   lock: () => Promise<void>;
   checkStatus: () => Promise<void>;
   /** 当前剩余 cooldown 秒数;0 表示未锁定 */
@@ -70,14 +69,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // 是解锁路径的防爆破措施,这里旧密码错误已由 webAPI 显式返回 message)。
     const result = await window.gotoAPI.auth.changePassword(oldPassword, newPassword);
     return result;
-  },
-
-  unlockWithBiometric: async () => {
-    const success = await window.gotoAPI.biometric.unlock();
-    if (success) {
-      set({ isUnlocked: true, failedAttempts: 0, lockedUntil: null });
-    }
-    return success;
   },
 
   lock: async () => {

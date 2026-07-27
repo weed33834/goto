@@ -9,7 +9,7 @@ interface ThemeState {
   init: () => () => void;
 }
 
-const STORAGE_KEY = 'taskflow-theme';
+const STORAGE_KEY = 'goto-theme';
 
 function getStoredMode(): ThemeMode {
   const stored = localStorage.getItem(STORAGE_KEY);

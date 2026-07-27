@@ -5,13 +5,6 @@ export const IPC_CHANNELS = {
     IS_UNLOCKED: 'auth:isUnlocked',
     HAS_VERIFIER: 'auth:hasVerifier',
   },
-  BIOMETRIC: {
-    AVAILABLE: 'biometric:available',
-    ENABLED: 'biometric:enabled',
-    UNLOCK: 'biometric:unlock',
-    ENABLE: 'biometric:enable',
-    DISABLE: 'biometric:disable',
-  },
   TASKS: {
     LIST: 'tasks:list',
     CREATE: 'tasks:create',

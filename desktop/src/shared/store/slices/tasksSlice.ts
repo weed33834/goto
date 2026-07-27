@@ -251,11 +251,26 @@ export const createTasksSlice: StateCreator<AppStore, [], [], TasksSlice> = (set
           });
         }
       }
+
+      // 激活 taskAfterComplete hook:任务真正变为 completed 时通知插件
+      // (副作用型,不阻塞 UI;失败由 pluginManager 内部 onError 隔离)。
+      // 之前此 hook 已声明但从未被调用,导致插件无法感知完成事件。
+      if (willComplete) {
+        const completedTask = { ...task, completed: true, completedAt: new Date(), status: 'completed' as const };
+        void pluginManager.invokeAsync('taskAfterComplete', completedTask);
+      }
     }
   },
 
   archiveTask: (id) => {
     get().updateTask(id, { isArchived: true });
+    // 归档视为"任务生命周期结束",同样触发 taskAfterComplete 给插件一个收尾机会。
+    // 与 toggleTaskComplete 不同:归档不修改 completed,只触发一次 hook(若任务已
+    // completed,这里会重复触发一次——可接受,插件侧应幂等)。
+    const task = get().tasks.find((t) => t.id === id);
+    if (task) {
+      void pluginManager.invokeAsync('taskAfterComplete', task);
+    }
   },
 
   restoreTask: (id) => {

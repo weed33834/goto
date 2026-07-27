@@ -49,10 +49,8 @@ test.describe('设置页', () => {
   });
 
   test('安全:解锁方式按钮(主密码)可见', async ({ page }) => {
-    // Web 端 biometric 不可用,只显示"主密码"按钮
+    // Web 端仅支持主密码解锁(历史生物识别 UI 已移除)
     await expect(page.getByRole('button', { name: '主密码' })).toBeVisible();
-    // 不应显示"生物识别"按钮(Web 端 isAvailable 返回 false)
-    await expect(page.getByRole('button', { name: '生物识别' })).not.toBeVisible();
   });
 
   test('安全:无操作自动锁定设置可见(P1-3 升级为 select)', async ({ page }) => {

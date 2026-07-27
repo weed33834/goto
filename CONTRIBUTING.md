@@ -1,4 +1,4 @@
-# Contributing to TaskFlow
+# Contributing to Goto
 
 感谢你的贡献！本仓库对代码合并方式有强制要求，请在提交前阅读完整指南。
 

@@ -3,11 +3,15 @@
  *
  * 不修改 store,只从 tasks 派生 MosaicTile[]。
  * 用 memoize 避免每次渲染重算。
+ *
+ * b3 扩展:新增 deriveRecentActivity(14 天热力图)与 deriveEmotionBreakdown(情绪分布),
+ * 让首页不止 3 个孤立数字,而是可视化趋势。
  */
 
 import type { Task } from '../types';
 import {
   type MosaicTile,
+  type MosaicEmotion,
   priorityToEmotion,
   emotionToColor,
   categoryToShape,
@@ -149,4 +153,95 @@ export function deriveMosaicStats(tiles: MosaicTile[]): MosaicStats {
     // 若最后一天不是今天,当前连续 = 0
     ...(todayOffset !== lastDay ? { currentStreak: 0 } : {}),
   };
+}
+
+// ─── b3:可视化扩展派生 ──────────────────────────────────────────────────
+
+/** 单日活跃度(用于 14 天热力图) */
+export interface DayActivity {
+  /** 当天本地 00:00 的 Date */
+  date: Date;
+  /** 当天落砖数 */
+  count: number;
+  /** 是否今天(用于热力图高亮) */
+  isToday: boolean;
+}
+
+/**
+ * 派生最近 N 天的每日落砖数(含 0 砖的天)。
+ *
+ * 与 gridX 不同:gridX 是从第一块砖起算的偏移,断档天不占位;
+ * 热力图需要连续日历(含 0 砖天),才能直观看出"哪几天空了"。
+ *
+ * @param tiles 已派生的砖块数组
+ * @param days  向前回溯的天数(含今天),默认 14
+ */
+export function deriveRecentActivity(tiles: MosaicTile[], days = 14): DayActivity[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayMs = 86400000;
+
+  // 按"天起始 epoch ms"索引砖数,避免重复 setHours
+  const countByDayStart = new Map<number, number>();
+  for (const t of tiles) {
+    const d = new Date(t.completedAt);
+    d.setHours(0, 0, 0, 0);
+    const key = d.getTime();
+    countByDayStart.set(key, (countByDayStart.get(key) ?? 0) + 1);
+  }
+
+  const result: DayActivity[] = [];
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const dayStart = new Date(today.getTime() - i * dayMs);
+    const key = dayStart.getTime();
+    result.push({
+      date: dayStart,
+      count: countByDayStart.get(key) ?? 0,
+      isToday: i === 0,
+    });
+  }
+  return result;
+}
+
+/** 情绪分布切片(用于分布条) */
+export interface EmotionSlice {
+  emotion: MosaicEmotion;
+  /** 情绪对应的砖色 */
+  color: string;
+  /** 中文标签 */
+  label: string;
+  /** 砖数 */
+  count: number;
+}
+
+const EMOTION_LABELS: Record<MosaicEmotion, string> = {
+  focus: '专注',
+  steady: '平稳',
+  urgent: '突破',
+  joy: '愉悦',
+  rest: '静养',
+};
+
+/** 情绪固定展示顺序(从高强度到低强度) */
+const EMOTION_ORDER: MosaicEmotion[] = ['urgent', 'focus', 'joy', 'steady', 'rest'];
+
+/**
+ * 派生情绪分布:按 emotion 分组计数,返回带 label/color 的切片数组。
+ *
+ * 仅返回 count > 0 的情绪(空切片不渲染,避免分布条出现 0 宽度色块)。
+ * 顺序固定为 urgent → focus → joy → steady → rest,与调色板从强到弱一致。
+ */
+export function deriveEmotionBreakdown(tiles: MosaicTile[]): EmotionSlice[] {
+  const counts = new Map<MosaicEmotion, number>();
+  for (const t of tiles) {
+    counts.set(t.emotion, (counts.get(t.emotion) ?? 0) + 1);
+  }
+  return EMOTION_ORDER
+    .filter((e) => (counts.get(e) ?? 0) > 0)
+    .map((e) => ({
+      emotion: e,
+      color: emotionToColor(e),
+      label: EMOTION_LABELS[e],
+      count: counts.get(e) ?? 0,
+    }));
 }

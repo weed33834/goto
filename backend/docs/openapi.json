@@ -5,7 +5,7 @@
     "description": "Goto 后端服务：提供任务、项目、分类、标签的 CRUD 管理，供桌面端通过 HTTP API 调用。与端到端加密同步链路解耦，仅作可选远程存储。",
     "contact": {
       "name": "Goto Security",
-      "email": "security@ms33834.dev"
+      "email": "security@goto.app"
     },
     "license": {
       "name": "MIT",

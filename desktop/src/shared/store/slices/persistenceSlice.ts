@@ -80,11 +80,25 @@ const ARRAY_FIELDS: ArrayField[] = [
   { storage: STORAGE_KEYS.PROJECTS, state: 'projects' },
   { storage: STORAGE_KEYS.CATEGORIES, state: 'categories' },
   { storage: STORAGE_KEYS.TAGS, state: 'tags' },
+  // smartLists 是 UI 偏好,但走 ARRAY_FIELDS 让 save/load 自动化。
+  // 不进 IMPORTABLE_STATES —— 智能列表是设备本地偏好,不随备份迁移到其他设备。
+  { storage: STORAGE_KEYS.SMART_LISTS, state: 'smartLists', requireNonEmpty: false },
+  // 习惯是设备本地行为数据,不走 E2EE 同步,但本地持久化走同一套 ARRAY_FIELDS。
+  // 用户在导出备份时大概率希望带上习惯打卡历史(换设备/重装时能恢复),
+  // 因此进 IMPORTABLE_STATES —— 备份文件迁移时 habits 一并迁移。
+  // loadMap 透传:Habit.createdAt/updatedAt 是 ISO 字符串(非 Date 对象),
+  // 走默认 parseDates 会被强制转成 Date,与类型声明冲突。
+  { storage: STORAGE_KEYS.HABITS, state: 'habits', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
+  // 模板/目标同样是设备本地数据,字符串日期,走透传 loadMap/importMap。
+  { storage: STORAGE_KEYS.TEMPLATES, state: 'templates', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
+  { storage: STORAGE_KEYS.GOALS, state: 'goals', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
 ];
 
 // 仅以下字段参与导入（与原 importData 行为一致）。
+// habits/templates/goals 加入:这些是设备本地数据,但用户换设备/重装时
+// 大概率希望一并迁移(习惯打卡历史、模板库、OKR 目标都属于个人资产)。
 const IMPORTABLE_STATES: ReadonlySet<keyof AppStore> = new Set([
-  'tasks', 'projects', 'categories', 'tags',
+  'tasks', 'projects', 'categories', 'tags', 'habits', 'templates', 'goals',
 ]);
 
 // 单个键的持久化数据损坏时跳过该键并继续加载其余键，
@@ -256,6 +270,18 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
       const searchHistory = await loadScalar(STORAGE_KEYS.SEARCH_HISTORY, 'searchHistory 数据损坏，清空');
       if (searchHistory !== undefined) set({ searchHistory: searchHistory as string[] });
 
+      // 加载插件配置与禁用列表(单用户本地数据,不进 IMPORTABLE_STATES,
+      // 不参与 exportData/importData;换设备时插件配置不随备份迁移,
+      // 用户可在新设备手动重建或重新导入)。
+      const userPluginsData = await loadScalar(STORAGE_KEYS.PLUGINS, 'userPlugins 数据损坏，保留默认空列表');
+      if (userPluginsData !== undefined && Array.isArray(userPluginsData)) {
+        set({ userPlugins: userPluginsData as AppStore['userPlugins'] });
+      }
+      const disabledIdsData = await loadScalar(`${STORAGE_KEYS.PLUGINS}__disabled`, 'disabledPluginIds 数据损坏，保留默认空列表');
+      if (disabledIdsData !== undefined && Array.isArray(disabledIdsData)) {
+        set({ disabledPluginIds: disabledIdsData as string[] });
+      }
+
       // 加载同步配置（含 deviceId / pairedDevices / relayUrl 等 E2EE 字段）。
       // 损坏或字段类型错乱时保留 slice 默认值，不阻断其余数据加载。
       const syncConfigData = await AsyncStorage.getItem(STORAGE_KEYS.SYNC_CONFIG);
@@ -292,6 +318,10 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
           AsyncStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, JSON.stringify(state.sidebarOpen)),
           AsyncStorage.setItem(STORAGE_KEYS.SEARCH_HISTORY, JSON.stringify(state.searchHistory)),
           AsyncStorage.setItem(STORAGE_KEYS.SYNC_CONFIG, JSON.stringify(state.syncConfig)),
+          // 插件配置与禁用列表:与 syncConfig 一样作为标量持久化,
+          // 不进 ARRAY_FIELDS(那些走 parseDates / 导入导出流程,插件不需要)。
+          AsyncStorage.setItem(STORAGE_KEYS.PLUGINS, JSON.stringify(state.userPlugins)),
+          AsyncStorage.setItem(`${STORAGE_KEYS.PLUGINS}__disabled`, JSON.stringify(state.disabledPluginIds)),
         ]);
         // P1-7:写入成功后清除 persistenceError。
         // 之前一旦设置就永不消失,用户即使后续保存成功也以为应用一直坏着。
@@ -319,6 +349,11 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
       projects: state.projects,
       categories: state.categories,
       tags: state.tags,
+      // habits 一并导出,便于用户换设备/重装时恢复习惯打卡历史
+      habits: state.habits,
+      // 模板/目标同样是个人资产,一并导出
+      templates: state.templates,
+      goals: state.goals,
       settings: {
         theme: state.theme,
         syncConfig: state.syncConfig,
@@ -368,6 +403,9 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
         projects?: Record<string, unknown>[];
         categories?: Record<string, unknown>[];
         tags?: Record<string, unknown>[];
+        habits?: Record<string, unknown>[];
+        templates?: Record<string, unknown>[];
+        goals?: Record<string, unknown>[];
         settings?: { theme?: ThemePreset };
       };
       const importData = importRoot as unknown as ImportPayload;
@@ -398,6 +436,17 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
       selectedTask: null,
       selectedProject: null,
       searchHistory: [],
+      // 智能列表是 UI 偏好,但用户既已清空数据,保留无意义的旧查询只会困惑,一并清。
+      smartLists: [],
+      // 习惯打卡历史一并清空(用户主动重置 = 全新开始)
+      habits: [],
+      // 模板/目标同样清空
+      templates: [],
+      goals: [],
+      // 重置插件:清除用户自建插件配置与禁用列表,
+      // 但不动 builtin 插件(它们由代码定义,reset 不应影响)。
+      userPlugins: [],
+      disabledPluginIds: [],
       // 重置配对身份：清除 deviceId / pairedDevices / relayUrl / syncProtocol，
       // 避免重置数据后旧设备身份残留导致后续配对/同步异常。currentDeviceId 一并清空。
       currentDeviceId: null,

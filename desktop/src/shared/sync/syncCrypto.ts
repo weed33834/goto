@@ -1,8 +1,8 @@
-// 移动端同步加密层 —— 基于 Web Crypto API，与桌面端 Node crypto 二进制兼容。
+// 同步加密层 —— 基于 Web Crypto API。
 //
-// 协议：AES-256-GCM（IV 12B / authTag 16B）+ X25519 ECDH + HKDF-SHA256。
-// 线格式 iv||authTag||ciphertext 与 Node crypto 一致；Web Crypto 输出
-// ciphertext||authTag，需在 encrypt 后 / decrypt 前重排（见 pack/unpack）。
+// 协议:AES-256-GCM(IV 12B / authTag 16B) + X25519 ECDH + HKDF-SHA256。
+// 线格式 iv||authTag||ciphertext;Web Crypto 输出 ciphertext||authTag,
+// 需在 encrypt 后 / decrypt 前重排(见 pack/unpack)。
 
 import { concatBytes, utf8Encode, utf8Decode, derToPem, pemToDer, randomBytes } from './bytes';
 import type { Bytes } from './bytes';
@@ -10,7 +10,8 @@ import type { Bytes } from './bytes';
 const GCM_IV_LEN = 12;
 const GCM_TAG_LEN = 16;
 const SYNC_KEY_LENGTH = 32;
-const HKDF_INFO = 'taskflow-sync-v1';
+// HKDF info 字符串,角色方向绑定:initiator→responder 与 responder→initiator 各派一把密钥。
+const HKDF_INFO = 'goto-sync-v2';
 
 function getCrypto(): Crypto {
   const c = (globalThis as { crypto?: Crypto }).crypto;

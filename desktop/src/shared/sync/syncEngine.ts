@@ -27,9 +27,18 @@ export interface SyncEngineCallbacks {
   onComplete: () => void;
   onError: (err: Error) => void;
   onClose: () => void;
-  /** 检测到并发写入（版本向量互不支配）。可选，用于 UI 提示。 */
+  /**
+   * 检测到并发写入(版本向量互不支配)。可选,用于 UI 提示。
+   *
+   * P1-3 扩展:传入 local/remote 完整 SyncRecord 快照(在 remote 落库前捕获 local),
+   * 让 UI 能展示冲突内容并支持"恢复本地"回滚。localRecord 可能为 null(本地原本无此记录,
+   * 此种情况不会触发 concurrent,但类型上保留以防调用方依赖)。
+   */
   onConcurrentWrite?: (info: {
     recordId: string;
+    tableName: string;
+    localRecord: SyncRecord | null;
+    remoteRecord: SyncRecord;
     localDeviceVersion: Record<string, number>;
     remoteDeviceVersion: Record<string, number>;
   }) => void;
@@ -298,8 +307,13 @@ export class SyncEngine {
         toApply.push(record);
       }
       if (decision === 'concurrent') {
+        // P1-3:传入完整 local/remote 快照,让 UI 能展示冲突并支持"恢复本地"。
+        // local 此时还未被 remote 覆盖(toApply 还没落库),捕获的是真正的本地版本。
         this.callbacks.onConcurrentWrite?.({
           recordId: record.id,
+          tableName: record.tableName,
+          localRecord: local,
+          remoteRecord: record,
           localDeviceVersion: local?.deviceVersion ?? {},
           remoteDeviceVersion: record.deviceVersion,
         });

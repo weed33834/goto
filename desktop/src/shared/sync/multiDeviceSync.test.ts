@@ -39,7 +39,7 @@ import { createSyncRecordApplier, type ApplierStore } from './syncRecordApplier'
 import { generateSyncMasterKey, encryptSyncRecord } from './syncCrypto';
 import { generateDeviceIdentity, type DeviceIdentity } from './syncIdentity';
 import type { Bytes } from './bytes';
-import type { Task } from '../types';
+import type { Task, Project, Category, Tag, VaultItem } from '../types';
 import type { SyncMessage, FrameMode } from './syncMessages';
 
 // --- 测试辅助:构造一个完整的同步栈 ---
@@ -47,17 +47,34 @@ import type { SyncMessage, FrameMode } from './syncMessages';
 /**
  * 测试用 applierStore:在 ApplierStore 接口之上暴露内部 state,
  * 方便测试直接读取 tasks 数组验证同步结果。
+ * state 必须覆盖 applier 全部 5 张表,否则 setState 写其它表会丢。
  */
 interface TestApplierStore extends ApplierStore {
-  state: { tasks: Task[] };
+  state: {
+    tasks: Task[];
+    projects: Project[];
+    categories: Category[];
+    tags: Tag[];
+    vaultItems: VaultItem[];
+  };
 }
 
 function createTestApplierStore(): TestApplierStore {
   const store: TestApplierStore = {
-    state: { tasks: [] as Task[] },
+    state: {
+      tasks: [] as Task[],
+      projects: [] as Project[],
+      categories: [] as Category[],
+      tags: [] as Tag[],
+      vaultItems: [] as VaultItem[],
+    },
     getState: () => store.state,
     setState: (partial) => {
       if (partial.tasks) store.state.tasks = partial.tasks;
+      if (partial.projects) store.state.projects = partial.projects;
+      if (partial.categories) store.state.categories = partial.categories;
+      if (partial.tags) store.state.tags = partial.tags;
+      if (partial.vaultItems) store.state.vaultItems = partial.vaultItems;
     },
   };
   return store;
@@ -150,7 +167,8 @@ async function createPairedStacks(smk: Bytes): Promise<{
     stack.session = session;
 
     const engine = new SyncEngine(
-      { session, smk, store, tables: ['tasks'] },
+      // 与 useSyncRuntime 生产配置一致:5 张表全部参与同步
+      { session, smk, store, tables: ['tasks', 'projects', 'categories', 'tags', 'vault_items'] },
       {
         onComplete: () => { stack.completed = true; },
         onError: (err) => { stack.errors.push(err); },
@@ -653,7 +671,7 @@ describe('多端同步模拟 — 并发写入检测', () => {
       stack.session = session;
 
       const engine = new SyncEngine(
-        { session, smk, store, tables: ['tasks'] },
+        { session, smk, store, tables: ['tasks', 'projects', 'categories', 'tags', 'vault_items'] },
         {
           onComplete: () => { stack.completed = true; },
           onError: (err) => { stack.errors.push(err); },
@@ -682,5 +700,186 @@ describe('多端同步模拟 — 并发写入检测', () => {
     // 至少有一方检测到并发写入(可能双方都检测到,取决于谁先收到对方的 BATCH)
     const totalConcurrent = A.concurrentWrites.length + B.concurrentWrites.length;
     expect(totalConcurrent).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// --- 多表同步覆盖测试 (P0-3) ---
+// 验证 SyncEngine + Applier 不仅同步 tasks,也同步 projects/categories/tags/vault_items。
+// 使用通用 insertRecord 插入任意表的加密 record。
+
+async function insertRecord(
+  store: SyncStore,
+  smk: Bytes,
+  tableName: 'tasks' | 'projects' | 'categories' | 'tags' | 'vault_items',
+  recordId: string,
+  payload: Record<string, unknown>,
+  updatedAt: number = Date.now(),
+): Promise<void> {
+  const encryptedPayload = await encryptSyncRecord(payload, smk);
+  const record: SyncRecord = {
+    id: `rec-${tableName}-${recordId}`,
+    tableName,
+    recordId,
+    version: 1,
+    encryptedPayload,
+    updatedAt,
+    deleted: 0,
+    deviceVersion: {},
+  };
+  await store.insertRecord(record);
+  await store.applyRecord(record, smk);
+}
+
+describe('多端同步模拟 — 多表覆盖 (P0-3)', () => {
+  it('projects 表双向同步:A 有 project → B 也拿到', async () => {
+    const smk = generateSyncMasterKey();
+    const { initiator: A, responder: B } = await createPairedStacks(smk);
+
+    await insertRecord(A.store, smk, 'projects', 'proj-1', {
+      id: 'proj-1',
+      name: '工作项目',
+      color: '#6366f1',
+      icon: 'folder',
+      isDefault: false,
+      isFavorite: true,
+      isArchived: false,
+      status: 'active',
+      taskCount: 0,
+      completedTaskCount: 0,
+      progress: 0,
+      tags: [],
+    });
+
+    await A.session.begin();
+    await waitForComplete([A, B]);
+
+    expect(A.completed).toBe(true);
+    expect(B.completed).toBe(true);
+    expect(A.errors).toHaveLength(0);
+    expect(B.errors).toHaveLength(0);
+
+    const bProjects = B.applierStore.getState().projects;
+    expect(bProjects).toHaveLength(1);
+    expect(bProjects[0].id).toBe('proj-1');
+    expect(bProjects[0].name).toBe('工作项目');
+    expect(bProjects[0].isFavorite).toBe(true);
+  });
+
+  it('categories 表同步 + 墓碑删除传播', async () => {
+    const smk = generateSyncMasterKey();
+    const { initiator: A, responder: B } = await createPairedStacks(smk);
+
+    // B 持有 cat-1 活记录(updatedAt=1000)
+    await insertRecord(B.store, smk, 'categories', 'cat-1', {
+      id: 'cat-1',
+      name: '工作',
+      color: '#64748b',
+      order: 0,
+    }, 1000);
+
+    // A 持有 cat-1 的墓碑(updatedAt=2000 > 1000,墓碑胜出)
+    const encryptedPayload = await encryptSyncRecord({ id: 'cat-1', name: '工作' }, smk);
+    const tombstone: SyncRecord = {
+      id: 'rec-categories-cat-1',
+      tableName: 'categories',
+      recordId: 'cat-1',
+      version: 2,
+      encryptedPayload,
+      updatedAt: 2000,
+      deleted: 1,
+      deviceVersion: {},
+    };
+    await A.store.insertRecord(tombstone);
+
+    await A.session.begin();
+    await waitForComplete([A, B]);
+
+    expect(B.applierStore.getState().categories.find((c) => c.id === 'cat-1')).toBeUndefined();
+  });
+
+  it('tags 表同步:B 有 tag → A 也拿到', async () => {
+    const smk = generateSyncMasterKey();
+    const { initiator: A, responder: B } = await createPairedStacks(smk);
+
+    await insertRecord(B.store, smk, 'tags', 'tag-1', {
+      id: 'tag-1',
+      name: '紧急',
+      color: '#ef4444',
+      icon: 'tag',
+      isSystem: false,
+      usageCount: 3,
+    });
+
+    await A.session.begin();
+    await waitForComplete([A, B]);
+
+    const aTags = A.applierStore.getState().tags;
+    expect(aTags).toHaveLength(1);
+    expect(aTags[0].id).toBe('tag-1');
+    expect(aTags[0].name).toBe('紧急');
+    expect(aTags[0].usageCount).toBe(3);
+  });
+
+  it('vault_items 表同步:敏感条目端到端加密传输', async () => {
+    const smk = generateSyncMasterKey();
+    const { initiator: A, responder: B } = await createPairedStacks(smk);
+
+    await insertRecord(A.store, smk, 'vault_items', 'vault-1', {
+      id: 'vault-1',
+      type: 'password',
+      title: 'GitHub 账号',
+      fields: [{ key: 'username', value: 'goto-user' }, { key: 'password', value: 'p@ssw0rd' }],
+      isHidden: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    await A.session.begin();
+    await waitForComplete([A, B]);
+
+    const bVault = B.applierStore.getState().vaultItems;
+    expect(bVault).toHaveLength(1);
+    expect(bVault[0].id).toBe('vault-1');
+    expect(bVault[0].title).toBe('GitHub 账号');
+    expect(bVault[0].type).toBe('password');
+    expect(bVault[0].isHidden).toBe(true);
+  });
+
+  it('5 张表混合同步:tasks + projects + categories + tags + vault_items 同时收敛', async () => {
+    const smk = generateSyncMasterKey();
+    const { initiator: A, responder: B } = await createPairedStacks(smk);
+
+    // A 有 task + project + vault,B 有 category + tag,同步后双方都全
+    await insertTaskRecord(A.store, smk, 'task-mix', '混合任务');
+    await insertRecord(A.store, smk, 'projects', 'proj-mix', { id: 'proj-mix', name: '混合项目' });
+    await insertRecord(A.store, smk, 'vault_items', 'vault-mix', {
+      id: 'vault-mix',
+      type: 'secureNote',
+      title: '混合笔记',
+      fields: [],
+      isHidden: false,
+    });
+    await insertRecord(B.store, smk, 'categories', 'cat-mix', { id: 'cat-mix', name: '混合分类' });
+    await insertRecord(B.store, smk, 'tags', 'tag-mix', { id: 'tag-mix', name: '混合标签' });
+
+    await A.session.begin();
+    await waitForComplete([A, B], 3000);
+
+    expect(A.completed).toBe(true);
+    expect(B.completed).toBe(true);
+
+    // B 收到 A 的 task + project + vault
+    const bState = B.applierStore.getState();
+    expect(bState.tasks.find((t) => t.id === 'task-mix')).toBeDefined();
+    expect(bState.projects.find((p) => p.id === 'proj-mix')).toBeDefined();
+    expect(bState.vaultItems.find((v) => v.id === 'vault-mix')).toBeDefined();
+    // B 已有 category + tag
+    expect(bState.categories.find((c) => c.id === 'cat-mix')).toBeDefined();
+    expect(bState.tags.find((t) => t.id === 'tag-mix')).toBeDefined();
+
+    // A 收到 B 的 category + tag
+    const aState = A.applierStore.getState();
+    expect(aState.categories.find((c) => c.id === 'cat-mix')).toBeDefined();
+    expect(aState.tags.find((t) => t.id === 'tag-mix')).toBeDefined();
   });
 });

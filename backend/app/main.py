@@ -90,7 +90,7 @@ app = FastAPI(
     openapi_tags=_TAGS_METADATA,
     contact={
         "name": "Goto Security",
-        "email": "security@ms33834.dev",
+        "email": "security@goto.app",
     },
     license_info={
         "name": "MIT",

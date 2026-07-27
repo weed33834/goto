@@ -1,9 +1,8 @@
 /**
  * Web 端安全存储封装。
  *
- * 用 Web Crypto API(AES-GCM)+ IndexedDB 替代移动端的 expo-secure-store
- * (iOS Keychain / Android Keystore)。保存敏感数据:认证 token、设备身份私钥
- * (Ed25519)、同步主密钥(SMK)等。
+ * 用 Web Crypto API(AES-GCM)+ IndexedDB 实现敏感数据存储:认证 token、
+ * 设备身份私钥(Ed25519)、同步主密钥(SMK)等。
  *
  * 加密方案:首次运行时生成一个随机的 AES-GCM 256 位主密钥,以 raw 字节的
  * base64 形式持久化到 IndexedDB 'app_settings' store 的 'secure_master_key'
@@ -11,21 +10,21 @@
  *
  * 除认证相关的 getStoredAuth/setStoredAuth/clearStoredAuth 之外,还暴露一组
  * 通用 KV 接口(secureGet/secureSet/secureDelete),供同步子系统按命名空间
- * 存取密钥材料。所有键统一加 `taskflow_` 前缀,避免与其它应用项冲突。
+ * 存取密钥材料。所有键统一加 `goto_` 前缀,便于识别与清理。
  */
 
 import { bytesToBase64, base64ToBytes, concatBytes } from '../sync/bytes';
 
-const DB_NAME = 'taskflow-secure-storage';
+const DB_NAME = 'goto-secure-storage';
 const DB_VERSION = 1;
 const SECURE_KV_STORE = 'secure_kv';
 const SETTINGS_STORE = 'app_settings';
 const MASTER_KEY_IDB_KEY = 'secure_master_key';
 const IV_LENGTH = 12;
 
-const TOKEN_KEY = 'taskflow_secure_token';
-const USER_KEY = 'taskflow_secure_user';
-const KEY_PREFIX = 'taskflow_';
+const TOKEN_KEY = 'goto_secure_token';
+const USER_KEY = 'goto_secure_user';
+const KEY_PREFIX = 'goto_';
 
 // ===== IndexedDB 连接管理 =====
 
@@ -236,7 +235,7 @@ export async function clearStoredAuth(): Promise<void> {
 
 // ===== 通用安全 KV 接口(供同步子系统使用)=====
 // 调用方传入的逻辑 key 不含前缀;本层统一拼上 KEY_PREFIX 后再落盘,
-// 确保所有 TaskFlow 安全项可被一眼识别。
+// 确保所有 Goto 安全项可被一眼识别。
 
 function namespacedKey(key: string): string {
   if (key.startsWith(KEY_PREFIX)) return key;

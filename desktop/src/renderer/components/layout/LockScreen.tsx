@@ -9,11 +9,9 @@ const MAX_FAILED_ATTEMPTS = 3; // 与 authStore 保持一致
 export function LockScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [isFirstRun, setIsFirstRun] = useState(false);
   const [, setCooldownTick] = useState(0); // 仅用于驱动重渲染
-  const { unlock, setupMasterPassword, unlockWithBiometric, lockedUntil } = useAuthStore();
+  const { unlock, setupMasterPassword, lockedUntil } = useAuthStore();
 
   // 倒计时刷新(每秒 tick 一次,驱动 cooldownRemaining 重算)
   useEffect(() => {
@@ -25,12 +23,8 @@ export function LockScreen() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const available = await window.gotoAPI.biometric.isAvailable();
-      const enabled = await window.gotoAPI.biometric.isEnabled();
       const hasVerifier = await window.gotoAPI.auth.hasVerifier();
       if (mounted) {
-        setBiometricAvailable(available);
-        setBiometricEnabled(enabled);
         setIsFirstRun(!hasVerifier);
       }
     })();
@@ -75,12 +69,6 @@ export function LockScreen() {
     setPassword(''); // 清空密码框,无论成功失败
   };
 
-  const handleBiometric = async () => {
-    setError('');
-    const success = await unlockWithBiometric();
-    if (!success) setError('生物识别验证失败');
-  };
-
   return (
     <div className="safe-area-x flex h-screen w-full flex-col items-center justify-center bg-slate-50 px-6 dark:bg-slate-900">
       <div className="mb-6 text-2xl font-semibold text-slate-800 dark:text-slate-100 sm:mb-8 sm:text-3xl">Goto</div>
@@ -102,11 +90,6 @@ export function LockScreen() {
         <Button type="submit" className="w-full" disabled={isCoolingDown && !isFirstRun}>
           {isFirstRun ? '设置并解锁' : isCoolingDown ? `锁定中(${cooldownRemaining}s)` : '解锁'}
         </Button>
-        {!isFirstRun && biometricAvailable && biometricEnabled && !isCoolingDown && (
-          <Button type="button" variant="secondary" className="w-full" onClick={handleBiometric}>
-            使用生物识别解锁
-          </Button>
-        )}
       </form>
       <p className="mt-6 text-xs text-slate-400 dark:text-slate-500">本地加密 · 数据不上传</p>
     </div>

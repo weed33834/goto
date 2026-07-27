@@ -73,9 +73,23 @@ export function taskTitleInput(page: Page) {
 
 /**
  * 等待并获取任务描述输入框。
+ *
+ * 注意:placeholder 用半角括号,与 TaskEditor.tsx 实际渲染一致
+ * (TaskEditor 第 379 行:placeholder="描述(可选)")。
+ * 早期版本用全角"（）"导致 getByPlaceholder 严格匹配失败。
  */
 export function taskDescriptionInput(page: Page) {
-  return page.getByPlaceholder('描述（可选）');
+  return page.getByPlaceholder('描述(可选)');
+}
+
+/**
+ * 等待并获取 TaskEditor 的主提交按钮。
+ *
+ * 用 type="submit" 定位,避免与子任务区"添加"按钮(type="button")重名冲突。
+ * 新建模式文本是"添加",编辑模式是"保存修改",selector 两种都覆盖。
+ */
+export function taskSubmitButton(page: Page) {
+  return page.locator('form button[type="submit"]');
 }
 
 export { TEST_PASSWORD, ONBOARDING_KEY };

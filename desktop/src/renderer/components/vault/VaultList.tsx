@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useVaultStore } from '../../store/vaultStore';
 import { VaultCard } from './VaultCard';
 import { VaultEditor } from './VaultEditor';
@@ -11,12 +11,18 @@ export function VaultList() {
     fetch();
   }, [fetch]);
 
+  // s1:时间胶囊走 /time-capsule 独立页展示,这里过滤掉避免双展示。
+  const vaultItems = useMemo(
+    () => items.filter((i) => i.type !== 'timeCapsule'),
+    [items],
+  );
+
   return (
     <div>
       <VaultEditor />
       {loading ? (
         <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">加载中...</p>
-      ) : items.length === 0 ? (
+      ) : vaultItems.length === 0 ? (
         <EmptyState
           icon="🔐"
           title="保险库为空"
@@ -24,7 +30,7 @@ export function VaultList() {
         />
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {vaultItems.map((item) => (
             <VaultCard key={item.id} item={item} />
           ))}
         </div>

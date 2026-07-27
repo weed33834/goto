@@ -9,7 +9,7 @@
  * 4. 自动处理时间戳(created_at / updated_at)
  */
 
-const DB_NAME = 'taskflow';
+const DB_NAME = 'goto';
 const DB_VERSION = 1;
 
 // 所有 object store 名称

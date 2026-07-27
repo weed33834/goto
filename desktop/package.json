@@ -1,6 +1,6 @@
 {
   "name": "goto-desktop",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Goto - Local-first encrypted personal schedule and sensitive information manager",
   "private": true,
   "license": "CNCL-1.0",
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@eslint/js": "^8.57.1",
     "@playwright/test": "^1.61.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20.19.43",
     "@types/react": "^18.3.31",

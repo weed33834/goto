@@ -11,15 +11,14 @@
 Your to-do list doesn't have to live on someone else's server.
 
 [![License: CNCL-1.0](https://img.shields.io/badge/License-CNCL--1.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-611%20passing-brightgreen.svg)](#quality-bar)
-[![Web unit](https://img.shields.io/badge/web%20unit-494%20%E2%9C%93-brightgreen.svg)](#quality-bar)
+[![Tests](https://img.shields.io/badge/tests-771%20passing-brightgreen.svg)](#quality-bar)
+[![Web unit](https://img.shields.io/badge/web%20unit-550%20%E2%9C%93-brightgreen.svg)](#quality-bar)
 [![Web e2e](https://img.shields.io/badge/web%20e2e-108%20%E2%9C%93-brightgreen.svg)](#quality-bar)
 [![Bundle](https://img.shields.io/badge/first--load%20JS-103KB%20gzip-success.svg)](#quality-bar)
 [![Sync](https://img.shields.io/badge/sync-5000%20rec%20%7C%20649ms-blue.svg)](#end-to-end-encrypted-sync)
 [![E2EE](https://img.shields.io/badge/E2EE-AES--256--GCM%20%2B%20Ed25519-purple.svg)](SECURITY.md)
 [![Platform](https://img.shields.io/badge/platform-Web%20%E2%9C%93%20%7C%20self--hosted%20relay-orange.svg)](#running-it)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](https://gitcode.com/badhope/goto/issues)
-[![Audit](https://img.shields.io/badge/audits-2%20rounds%20%7C%2036%20findings-red.svg)](docs/security/SECURITY_TRACKER.md)
 
 **English** · [中文](README.zh-CN.md)
 
@@ -81,23 +80,23 @@ life to a SaaS. The interesting parts, in my opinion:
 ```mermaid
 flowchart LR
   subgraph DeviceA["Device A — Web app"]
-    A_UI["React UI<br/>(8 pages + Mosaic)"]
+    A_UI["React UI<br/>(12 pages + Mosaic)"]
     A_IDB[("IndexedDB<br/>(local-first)")]
-    A_ENC["Web Crypto<br/>PBKDF2 600k + AES-256-GCM"]
+    A_ENC["Web Crypto<br/>argon2id + AES-256-GCM"]
     A_UI <--> A_IDB
     A_UI <--> A_ENC
   end
 
   subgraph DeviceB["Device B — Web app"]
-    B_UI["React UI<br/>(8 pages + Mosaic)"]
+    B_UI["React UI<br/>(12 pages + Mosaic)"]
     B_IDB[("IndexedDB<br/>(local-first)")]
-    B_ENC["Web Crypto<br/>PBKDF2 600k + AES-256-GCM"]
+    B_ENC["Web Crypto<br/>argon2id + AES-256-GCM"]
     B_UI <--> B_IDB
     B_UI <--> B_ENC
   end
 
   Relay["Relay<br/>(self-hosted)<br/>ciphertext-only<br/>7-day offline queue"]
-  Backend["Backend<br/>(optional)<br/>FastAPI · 22 endpoints"]
+  Backend["Backend<br/>(optional)<br/>FastAPI · 36 endpoints"]
 
   A_ENC -- "encrypted frames<br/>iv‖tag‖ct" --> Relay
   Relay --> B_ENC
@@ -114,9 +113,9 @@ Three components, one data model — every record carries `updatedAt`, so the sa
 
 | Component | Stack | What it does |
 | --- | --- | --- |
-| **Web app** (`desktop/`) | Vite · React 18 · Zustand 4 · TypeScript 5 | Local-first browser task manager. Persists to IndexedDB, encrypts the vault with Web Crypto (PBKDF2), and encrypts JSON backups with PBKDF2-SHA256 (600k iterations) + AES-256-GCM. **12 pages + Mosaic timeline view** (Today / Calendar / Projects / Project detail / Categories / Tags / Search / Vault / Settings / Kanban / Insights / Weekly Review), reminders, recurrence, subtasks, NLP quick-add, bulk ops, drag-reorder, vim shortcuts, PWA installable, 6-section Settings (Security / Appearance / Shortcuts / Data / Sync / Danger zone). |
+| **Web app** (`desktop/`) | Vite · React 18 · Zustand 4 · TypeScript 5 | Local-first browser task manager. Persists to IndexedDB, encrypts the vault with Web Crypto (argon2id), and encrypts JSON backups with argon2id (m=64MB t=3 p=4) + AES-256-GCM (legacy PBKDF2 backups read-only compatible). **12 pages + Mosaic timeline view** (Today / Calendar / Projects / Project detail / Categories / Tags / Search / Vault / Settings / Kanban / Insights / Weekly Review), reminders, recurrence, subtasks, NLP quick-add, bulk ops, drag-reorder, vim shortcuts, PWA installable, 6-section Settings (Security / Appearance / Shortcuts / Data / Sync / Danger zone). |
 | **Relay** | Node.js 18+ (≥20) · WebSocket · express-rate-limit · Docker | Forwards ciphertext frames only, with an offline queue (7-day TTL). LAN-first, relay as fallback. |
-| **Backend** | Python 3.11+ · FastAPI · PyGit2 | Optional: task/project/category/tag API, git management, plugin system. Decoupled from the sync path. **22 REST endpoints.** |
+| **Backend** | Python 3.11+ · FastAPI · PyGit2 | Optional: task/project/category/tag API, git management, plugin system. Decoupled from the sync path. **36 REST endpoints.** |
 
 The web app syncs across devices over an encrypted P2P session via the
 relay; the relay is just a porter that never decrypts.
@@ -128,9 +127,8 @@ The web app ships **12 pages** — Today, Calendar, Projects, **Project detail**
 **Insights** (statistics dashboard with Karma score), **Weekly Review** —
 plus a Mosaic timeline view. The Gantt / Timeline / TimeBlock / Table /
 MindMap views and Templates / Automation / Notes / Analytics / Goals /
-Habits pages described in earlier docs are **not yet implemented** — see
-[Goto Pivot Plan](docs/GOTO_PIVOT_PLAN.md) and
-[Product Evolution Plan](docs/PRODUCT_EVOLUTION_PLAN_v1.md) for the roadmap.
+Habits pages are **not yet implemented** — see
+[docs/ROADMAP.md](docs/ROADMAP.md) for the roadmap.
 
 Task dependencies (`blockedBy` / `blocks`) stop you marking a task done
 when something it's waiting on is still open.
@@ -140,8 +138,7 @@ when something it's waiting on is still open.
 The Settings page is split into **Security / Appearance / Shortcuts /
 Data / Sync / Danger zone**:
 
-- **Security**: unlock method (master password, biometric only when the
-  platform exposes it), auto-lock duration (off / 1 / 5 / 15 / 30 / 60 min,
+- **Security**: unlock method (master password only (no biometric — Web platform has no usable WebAuthn landing yet)), auto-lock duration (off / 1 / 5 / 15 / 30 / 60 min,
   upgraded from the old fixed 5-min toggle), screenshot/recording protection
   (effective inside the desktop shell, marked as best-effort on Web),
   **change master password** (validates the old password, derives a new
@@ -154,7 +151,7 @@ Data / Sync / Danger zone**:
 - **Shortcuts**: a `?` shortcut opens a help overlay listing every
   registered binding (`?` / `Mod+L` / `Mod+B` / `Mod+K` / `/` / `Mod+N` /
   `Esc`); the Settings page also has a "view all shortcuts" button.
-- **Data**: encrypted backup export/import (PBKDF2-SHA256 600k +
+- **Data**: encrypted backup export/import (argon2id +
   AES-256-GCM) and plaintext JSON export/import (vault excluded from JSON
   for credential safety).
 - **Sync**: relay URL, device identity, pairing (host / join), paired
@@ -194,10 +191,6 @@ later sync would fail to decrypt. Device revocation is a four-step
 orchestration: kill the runtime session, drop the device record, clear
 its outbox, and only reset the SMK when no paired devices remain.
 
-The gory details (incl. places where the implementation diverged from the
-design spec, and why) live in
-[docs/superpowers/specs/](docs/superpowers/specs/).
-
 ## Features at a glance
 
 | Area | What you get |
@@ -205,8 +198,8 @@ design spec, and why) live in
 | **Local-first** | Data in IndexedDB. No account, no cloud, no telemetry. |
 | **E2EE sync** | AES-256-GCM under a Sync Master Key; relay only sees ciphertext. |
 | **Vault** | Field-level AES-256-GCM for sensitive entries. Password generator included. |
-| **Backups** | Encrypted JSON export: PBKDF2-SHA256 600k + AES-256-GCM. Plaintext export excludes vault. |
-| **Master password** | PBKDF2 verifier only; password never persisted. Changeable in Settings. |
+| **Backups** | Encrypted JSON export: argon2id + AES-256-GCM. Plaintext export excludes vault. |
+| **Master password** | argon2id verifier only; password never persisted. Changeable in Settings. |
 | **Brute-force cooldown** | 3 wrong passwords → 30 s lockout. |
 | **Auto-lock** | Off / 1 / 5 (default) / 15 / 30 / 60 min, or lock-on-blur. |
 | **Privacy shell** | Lock screen, privacy mode (hide vault), clipboard auto-clear (default 30 s, configurable). |
@@ -227,7 +220,7 @@ design spec, and why) live in
 | **Weekly review** | Week-at-a-glance (completed / stalled / overdue / due this week / per-project progress) + reflection notes + archive-30d-old button. |
 | **PWA** | Installable (manifest + SVG icons + shortcuts). Workbox caching: assets CacheFirst, app shell NetworkFirst, /api & /ws never cached. |
 | **Plugin system** | Registry + built-in plugins. Backend extends with custom plugins. |
-| **Tests** | 611 total: 494 unit + 108 e2e + 104 backend + 9 relay. |
+| **Tests** | 771 total: 550 unit + 26 skipped + 108 e2e + 104 backend + 9 relay. |
 
 ## Running it
 
@@ -244,9 +237,6 @@ For a deployable static bundle:
 ```bash
 npm run build     # writes dist/renderer/ (static SPA) — serve that dir
 ```
-
-The full user manual (master password, vault, sync, backup) is in
-[docs/desktop-user-guide.md](docs/desktop-user-guide.md).
 
 ### Relay (self-hosted)
 
@@ -280,12 +270,12 @@ desktop/                 # pure-browser web app (Vite + React 18 + Zustand 4)
     api/                 # backend REST client (tasks/projects/categories/tags)
     store/               # Zustand store, state lives in slices/
     sync/                # E2EE sync stack (Web Crypto, talks to the relay)
-    utils/               # secure storage (IndexedDB + Web Crypto / PBKDF2)
+    utils/               # secure storage (IndexedDB + Web Crypto / argon2id)
   src/renderer/lib/      # webAPI: local IndexedDB implementation
                          # (local-first data access, no native bridge)
 relay/                   # self-hostable WebSocket relay + Docker
 backend/                 # optional FastAPI service
-docs/                    # user guide, roadmap, security tracker, relay deployment
+docs/                    # roadmap, relay deployment, developer guide
 ```
 
 The web app keeps two data paths: `shared/api/*` talks to the optional
@@ -305,38 +295,26 @@ cd backend && python -m ruff check app && python -m mypy app && python -m pytest
 cd relay && npx tsc --noEmit && npm test
 ```
 
-I aim for "0 errors" on all three. The test baseline is **611 tests**
-(web app unit 494 + 26 skipped | web app e2e 108 | backend 104 | relay 9),
+I aim for "0 errors" on all three. The test baseline is **771 tests**
+(web app unit 550 + 26 skipped | web app e2e 108 | backend 104 | relay 9),
 all green on `main`. The 5000-record end-to-end sync benchmark lands at
 649 ms (7699 rec/s) — that figure used to be 52 s before fixing a
 REQUEST-chunking bug and batching the inserts into one transaction.
 
 ## Security
 
-Two independent audits (TF-001~019 and TF2-001~017, 36 findings total)
-are tracked in a single
-[SECURITY_TRACKER.md](docs/security/SECURITY_TRACKER.md). Most are
-fixed; the rest are tagged in the roadmap. Highlights of what's in
-place: branch protection with required review, CodeQL, gitleaks with
-push-protection, dependency review (rejects GPL-3.0/AGPL-3.0), OSSF
-Scorecard, cosign-signed releases, property-based fuzzing with
-Hypothesis. Vulnerability reporting is private — see
+Security measures in place: CORS allowlist, Bearer-token auth, log
+redaction, path validation, DNS-rebinding defense, argon2id verifier.
+Vulnerability reporting is private — see
 [SECURITY.md](SECURITY.md).
 
 ## Deployment
 
-The repo ships these GitHub Actions:
+The repo ships `ci.yml` — desktop lint/typecheck/test/build + e2e +
+backend ruff/mypy/pytest + relay vitest, all on every push and PR.
 
-- `ci.yml` — desktop web app lint/test/build + backend ruff/mypy/test/fuzz
-- `verify.yml` — typecheck on every push
-- `relay-ci.yml` — relay typecheck/build/test
-- `web-deploy.yml` — builds `desktop/dist/renderer` and publishes to GitHub Pages
-- `pages-intro.yml` — publishes the static project intro in `docs/` to GitHub Pages
-- `gitleaks.yml` — secret scanning
-- `release.yml` — cosign-keyless signed release + SHA256SUMS
-
-The GitHub Pages site is only an introduction page unless `web-deploy.yml`
-is triggered; the web app itself is a static SPA you can host anywhere.
+The GitHub Pages site is only an introduction page; the web app itself
+is a static SPA you can host anywhere.
 
 ## Documentation
 
@@ -344,8 +322,7 @@ is triggered; the web app itself is a static SPA you can host anywhere.
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layering, state model, sync protocol stack |
 | [QUICK_START.md](QUICK_START.md) | Three paths to a running app |
-| [docs/desktop-user-guide.md](docs/desktop-user-guide.md) | Web app manual: install, vault, sync, backup |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | What's done (Phase 1–8) and what's next |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | What's done and what's next |
 | [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Dev workflow, commands, sync strategy |
 | [docs/relay-deployment.md](docs/relay-deployment.md) | Self-hosting the relay, TLS, Nginx |
 | [docs/fuzzing.md](docs/fuzzing.md) | Property-based fuzzing with Hypothesis |
@@ -379,7 +356,7 @@ is triggered; the web app itself is a static SPA you can host anywhere.
 
 ## FAQ — things people actually ask
 
-- **Can I recover a forgotten master password?** No. The password is never persisted — only a PBKDF2 verifier is. Write it down somewhere safe, or use encrypted backups.
+- **Can I recover a forgotten master password?** No. The password is never persisted — only an argon2id verifier is. Write it down somewhere safe, or use encrypted backups.
 - **What does the relay see?** Ciphertext frames + your device ID. It cannot decrypt anything.
 - **What if I lose all my devices?** Restore an encrypted backup on a new device (you still need the password). Without a backup or a paired device, the data is gone — that's the cost of E2EE.
 - **Can I sync without a relay?** No — pairing requires a relay to ferry the handshake. Once paired, LAN-direct is preferred when both devices are on the same network.
@@ -391,10 +368,10 @@ Full FAQ: [FAQ.md](FAQ.md).
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full roadmap. Highlights:
 
-- ✅ Phase A — Local-first web app (Mosaic + 8 base pages), E2EE sync, vault, encrypted backups, 6-section Settings, 611 tests green.
-- ✅ Phase 1 + 2 (2026-07-20) — Reminders, recurrence, subtasks, full-field editor, NLP quick-add, bulk ops, drag-reorder, PWA, vim shortcuts, project detail page, Kanban, Insights, Weekly Review. 511 unit tests green. See [CHANGELOG](CHANGELOG.md).
-- 🚧 Phase B — Multi-device sync hardening, plugin marketplace, Mosaic interactions, Filter DSL, Cmd+K, calendar drag-to-schedule.
-- 🔮 Phase C — Cross-platform native shells, optional LLM-assisted tagging (local model).
+- ✅ Local-first web app (Mosaic + 12 base pages), E2EE sync, vault, encrypted backups, 6-section Settings, 771 tests green.
+- ✅ Reminders, recurrence, subtasks, full-field editor, NLP quick-add, bulk ops, drag-reorder, PWA, vim shortcuts, project detail page, Kanban, Insights, Weekly Review. See [CHANGELOG](CHANGELOG.md).
+- 🚧 Multi-device sync hardening, plugin marketplace, Mosaic interactions, Filter DSL, Cmd+K, calendar drag-to-schedule.
+- 🔮 Optional LLM-assisted tagging (local model).
 
 ## License
 

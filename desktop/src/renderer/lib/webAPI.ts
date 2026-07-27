@@ -62,13 +62,6 @@ interface GotoAPI {
     isUnlocked: () => Promise<boolean>;
     hasVerifier: () => Promise<boolean>;
   };
-  biometric: {
-    isAvailable: () => Promise<boolean>;
-    isEnabled: () => Promise<boolean>;
-    unlock: () => Promise<boolean>;
-    enable: (password: string) => Promise<boolean>;
-    disable: () => Promise<void>;
-  };
   tasks: {
     list: () => Promise<Task[]>;
     create: (task: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>> & Pick<Task, 'title'>) => Promise<Task>;
@@ -548,9 +541,9 @@ export const webAPI: GotoAPI = {
       // 恢复出厂:清空所有 IndexedDB 持久化数据 + auth_verifier + 安全设置。
       // 调用方应在调用后执行 window.location.reload() 让应用重启到首次启动状态。
       try {
-        // 1. 清应用主数据(persistenceSlice 使用的 taskflow-async-storage DB)
+        // 1. 清应用主数据(persistenceSlice 使用的 goto-async-storage DB)
         await browserStorage.clear();
-        // 2. 清 auth_verifier + security_settings(存在 taskflow DB)
+        // 2. 清 auth_verifier + security_settings(存在 goto DB)
         await idbRemove('app_settings', 'auth_verifier');
         await idbClearStore('security_settings');
         // 3. 清内存状态
@@ -579,19 +572,10 @@ export const webAPI: GotoAPI = {
     },
   },
 
-  biometric: {
-    // Web 端不支持生物识别,返回 false/no-op
-    isAvailable: async () => false,
-    isEnabled: async () => false,
-    unlock: async () => false,
-    enable: async (_password: string) => false, // Web 端不支持生物识别
-    disable: async () => {},
-  },
-
   tasks: {
     // 统一数据层:任务读写经共享 store（useAppStore）落到同一 IndexedDB
-    // （taskflow-async-storage），与 loadData 的读取源完全一致，杜绝原先
-    // renderer 任务直连独立 IndexedDB（taskflow）导致的"双数据源"静默数据丢失。
+    // （goto-async-storage），与 loadData 的读取源完全一致，杜绝原先
+    // renderer 任务直连独立 IndexedDB（goto）导致的"双数据源"静默数据丢失。
     list: async () => {
       return useAppStore.getState().tasks;
     },
@@ -676,7 +660,7 @@ export const webAPI: GotoAPI = {
 
   vault: {
     // 统一数据层:保险库读写经共享 store（useAppStore.vaultItems）落到同一
-    // IndexedDB（taskflow-async-storage），与 loadData 读取源一致。
+    // IndexedDB（goto-async-storage），与 loadData 读取源一致。
     list: async () => {
       return useAppStore.getState().vaultItems;
     },
@@ -826,8 +810,12 @@ export const webAPI: GotoAPI = {
       });
     },
     generatePairingCode: async () => {
-      // Web 端生成 5 分钟有效的配对码,真实配对逻辑由 sync runtime 处理
-      return { code: generateId('pair'), expiresAt: Date.now() + 300000 };
+      // host 模式配对由 useSyncRuntime.startResponderPairing 接通真实 relay:
+      //   pairingService.generatePairingCode → relay 发 8 位码 → respondToPairing 等待 claim。
+      // 本 API 仅作兼容占位,真实配对请通过 Settings → 同步 → 添加新设备 触发。
+      throw new Error(
+        '配对码生成由同步运行时处理,请通过设置 → 同步 → 添加新设备 触发',
+      );
     },
     claimPairingCode: async (code: string) => {
       // 接通真实配对流程(pairingService.claimPairingCodeAndPair):

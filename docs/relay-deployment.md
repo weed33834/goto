@@ -1,6 +1,6 @@
-# TaskFlow Relay 自托管部署指南
+# Goto Relay 自托管部署指南
 
-本文档说明如何把 TaskFlow Relay 中继服务部署到自己的服务器上。Relay 是一个无状态
+本文档说明如何把 Goto Relay 中继服务部署到自己的服务器上。Relay 是一个无状态
 的 Node.js 服务，负责设备配对、令牌签发和 WebSocket 帧转发；它不接触任何用户数据，
 所有同步数据都是端到端加密的，relay 只看到密文。
 

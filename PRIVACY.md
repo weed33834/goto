@@ -1,8 +1,7 @@
 # Privacy Policy — Goto
 
 > 本文档为 Phase A 阶段最小可用版本,Phase B' 末完成 DPIA 后将发布 v1.0 正式版。
-> 对应规划:`docs/GOTO_PIVOT_PLAN.md` §12.1 / §12.5。
-> 适用对象:Goto Web App(浏览器 / PWA)、桌面壳(Chromium 内核)、Relay 自部署用户。
+> 适用对象:Goto Web App(浏览器 / PWA)、Relay 自部署用户。
 > 最近更新:2026-07-20
 
 ---
@@ -183,8 +182,7 @@ Goto 的处理活动按 GDPR 第 6 条 / 第 9 条分类:
 
 ### 6.3 安全审计
 
-- 持续运行 gitleaks 密钥扫描、OSSF Scorecard 监控
-- 已完成两轮安全审计(36 项发现),追踪见 `docs/security/SECURITY_TRACKER.md`
+- 当前在用的安全机制:CORS 白名单、Bearer token 鉴权、日志脱敏、路径校验、DNS 重绑定防御、argon2id verifier
 - 漏洞报告流程见 `SECURITY.md`
 
 ### 6.4 数据泄露响应

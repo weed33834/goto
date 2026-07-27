@@ -1,7 +1,7 @@
 // Vault Slice — 加密保险库状态(Web 端密码/卡片/安全笔记)
 // 与 tasksSlice 一致:所有状态集中在共享 store,经 saveData 持久化到统一的
-// IndexedDB(taskflow-async-storage),消除原先 renderer vaultStore 直连独立
-// IndexedDB(taskflow)导致的"双数据源"数据丢失问题。
+// IndexedDB(goto-async-storage),消除原先 renderer vaultStore 直连独立
+// IndexedDB(goto)导致的"双数据源"数据丢失问题。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
 import type { VaultItem, Notification } from '../../types';

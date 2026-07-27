@@ -1,7 +1,7 @@
 # 快速上手
 
 Goto 现在是一个**纯浏览器 Web 应用**（`desktop/` 目录，Vite + React 18 +
-Zustand 4），本地数据落 IndexedDB，保险库用 Web Crypto（PBKDF2）加密。可选的后端
+Zustand 4），本地数据落 IndexedDB，保险库用 Web Crypto（argon2id）加密。可选的后端
 （FastAPI）与自托管 relay 用于跨设备同步。
 
 ## Web 应用（最快）
@@ -21,7 +21,7 @@ npm run build     # 写入 dist/renderer/（静态 SPA）
 ```
 
 `dist/renderer/` 是一个纯静态站点，丢到任意主机（Netlify、Vercel、S3 + CloudFront、
-GitHub Pages）即可。注意：`web-deploy.yml` 上传的就是 `desktop/dist/renderer`。
+GitHub Pages）即可。
 
 ## 自托管 Relay（跨设备同步用）
 
@@ -53,7 +53,7 @@ cd desktop
 npm run typecheck   # 期望 0 错误（tsc --noEmit）
 npm run lint        # 期望 0 错误
 npm run build       # 约 30s 完成，产物在 dist/renderer/
-npm test            # vitest 单元测试（494 passed / 26 skipped）
+npm test            # vitest 单元测试（550 passed / 26 skipped）
 ```
 
 跑端到端测试(需先下载 chromium + 系统依赖):

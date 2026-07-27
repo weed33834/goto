@@ -9,7 +9,7 @@
 // - MAX_UNDO_STACK=20,超出按 FIFO 丢弃
 // - listeners 用于未来 hook 订阅(目前 Toaster 不需要订阅,直接读 action.data)
 import { useAppStore } from '../store';
-import type { Task, VaultItem } from '../types';
+import type { Task, VaultItem, Habit } from '../types';
 
 type UndoableAction = {
   id: string;
@@ -96,6 +96,21 @@ export function undoDeleteVaultItem(item: VaultItem) {
     return;
   }
   useAppStore.setState({ vaultItems: [...state.vaultItems, item] });
+  useAppStore.getState().saveData();
+  popUndo();
+}
+
+/**
+ * 撤销习惯删除:把原 Habit 完整对象追加回 habits 数组,并落盘。
+ * 幂等:已存在则跳过(用户重复点 Undo)。
+ */
+export function undoDeleteHabit(habit: Habit) {
+  const state = useAppStore.getState();
+  if (state.habits.some((h) => h.id === habit.id)) {
+    popUndo();
+    return;
+  }
+  useAppStore.setState({ habits: [...state.habits, habit] });
   useAppStore.getState().saveData();
   popUndo();
 }

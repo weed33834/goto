@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# 同一分支的并发 run 只保留最新一个,取消旧的
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # desktop: Web 应用(Vite + React + TypeScript)
+  # ─────────────────────────────────────────────────────────────────────
+  desktop:
+    name: Desktop (lint / typecheck / unit / build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run build
+
+  # ─────────────────────────────────────────────────────────────────────
+  # desktop e2e: Playwright(需要 chromium + 系统依赖)
+  # ─────────────────────────────────────────────────────────────────────
+  e2e:
+    name: Desktop E2E (Playwright)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium + system deps
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: desktop/playwright-report
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────
+  # backend: FastAPI(Python)
+  # ─────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend (ruff / mypy / pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install ruff mypy
+
+      - name: Ruff
+        run: .venv/bin/ruff check .
+
+      - name: Mypy
+        run: .venv/bin/mypy app
+
+      - name: Pytest
+        run: .venv/bin/python -m pytest -q
+
+  # ─────────────────────────────────────────────────────────────────────
+  # relay: 同步中继服务(TypeScript + Express + ws)
+  # ─────────────────────────────────────────────────────────────────────
+  relay:
+    name: Relay (typecheck / test / build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run build

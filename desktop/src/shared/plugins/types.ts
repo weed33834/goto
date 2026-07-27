@@ -60,4 +60,33 @@ export interface Plugin {
   hooks: PluginHooks;
   /** 可选：插件描述，用于设置页展示。 */
   description?: string;
+  /**
+   * 插件来源:
+   * - 'builtin':随应用分发,不可删除,只能启停。
+   * - 'user':用户在插件管理页创建/导入,可删除。
+   * 缺省视为 'builtin' 以兼容旧 Plugin 对象。
+   */
+  source?: 'builtin' | 'user';
+  /**
+   * 用户自建插件的序列化配置(仅 source='user' 有值)。
+   * 用于持久化:存到 AsyncStorage 后,下次启动时反序列化重建 Plugin。
+   * builtin 插件不需要此字段(代码里直接 register)。
+   */
+  config?: UserPluginConfig;
+}
+
+/**
+ * 用户自建 auto-tag 插件的配置。
+ * 持久化时只存配置,启动时 buildUserPlugin(config) 重建 Plugin 对象。
+ * 当前只支持 auto-tag 一种类型,后续可扩展为联合类型(discriminated union)。
+ */
+export interface UserPluginConfig {
+  /** 插件 id,持久化键。 */
+  id: string;
+  name: string;
+  description?: string;
+  /** 关键词 → 标签 规则;命中任一 keyword 即加上对应 tags。 */
+  rules: Array<{ tags: string[]; words: string[] }>;
+  /** 创建时间 ISO,用于排序与展示。 */
+  createdAt: string;
 }

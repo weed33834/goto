@@ -1,6 +1,6 @@
 # Fuzzing
 
-TaskFlow uses property-based fuzz testing with [Hypothesis](https://hypothesis.readthedocs.io/) to validate security-critical code paths, including path traversal prevention and URL validation.
+Goto uses property-based fuzz testing with [Hypothesis](https://hypothesis.readthedocs.io/) to validate security-critical code paths, including path traversal prevention and URL validation.
 
 ## What we fuzz
 
@@ -18,7 +18,7 @@ PYTHONPATH=. pytest fuzz/ -v
 
 ## CI integration
 
-Fuzz tests run on every push and PR via the [Fuzz workflow](/.github/workflows/fuzz.yml) and weekly on schedule.
+Fuzz tests run via `pytest fuzz/` locally; CI 集成见 `.github/workflows/ci.yml`。
 
 ## Adding new fuzz targets
 

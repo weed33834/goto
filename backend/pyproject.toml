@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "goto-backend"
-version = "0.1.0"
+version = "0.2.0"
 description = "Goto backend service: tasks/projects/categories/tags CRUD"
 license = { text = "CNCL-1.0" }
 requires-python = ">=3.11"

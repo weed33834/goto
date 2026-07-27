@@ -7,6 +7,7 @@ import { RelayStore } from './store';
 import { createRoutes } from './routes';
 import { ConnectionManager } from './connectionManager';
 import { attachWsRelay, SYNC_PATH } from './wsRelay';
+import { logger } from './logger';
 
 export interface RelayServerOptions {
   port: number;
@@ -54,7 +55,7 @@ export function createRelayServer(opts: RelayServerOptions): RelayServer {
   app.use(createRoutes(store, publicWsUrl));
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[relay] unhandled error', err);
+    logger.error({ err }, 'unhandled error');
     const isDev = process.env.NODE_ENV === 'development';
     res.status(500).json({ error: isDev ? err.message : 'Internal server error' });
   });
@@ -71,8 +72,8 @@ export function createRelayServer(opts: RelayServerOptions): RelayServer {
   const start = (): Promise<void> =>
     new Promise((resolve) => {
       server.listen(opts.port, host, () => {
-        console.log(`Goto relay listening on ${host}:${opts.port}`);
-        console.log(`WebSocket path: ${publicWsUrl}`);
+        logger.info({ host, port: opts.port }, 'relay listening');
+        logger.info({ publicWsUrl }, 'websocket path');
         resolve();
       });
     });

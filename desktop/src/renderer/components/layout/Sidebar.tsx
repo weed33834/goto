@@ -35,12 +35,14 @@ const navGroups: NavGroup[] = [
       { id: 'projects', label: '项目' },
       { id: 'categories', label: '分类' },
       { id: 'tags', label: '标签' },
+      { id: 'templates', label: '任务模板' },
     ],
   },
   {
     title: '洞察',
     items: [
       { id: 'insights', label: '统计仪表' },
+      { id: 'goals', label: 'OKR 目标' },
       { id: 'review', label: '每周回顾' },
     ],
   },
@@ -48,12 +50,17 @@ const navGroups: NavGroup[] = [
     title: '工具',
     items: [
       { id: 'search', label: '搜索' },
+      { id: 'smart-lists', label: '智能列表' },
+      { id: 'pomodoro', label: '番茄钟' },
+      { id: 'habits', label: '习惯追踪' },
     ],
   },
   {
     title: '系统',
     items: [
       { id: 'vault', label: '保险库' },
+      { id: 'time-capsule', label: '时间胶囊' },
+      { id: 'plugins', label: '插件 / Skill' },
       { id: 'settings', label: '设置' },
     ],
   },

@@ -1,7 +1,8 @@
 // InsightsPage — 统计仪表盘(Phase 2.2)
 //
 // 展示:
-//   - 顶部 4 张统计卡(总任务 / 已完成 / 今日待办 / 逾期)
+//   - 顶部建议卡片区(D5 本地建议引擎,基于 tasks/habits/goals 派生)
+//   - 4 张统计卡(总任务 / 已完成 / 今日待办 / 逾期)
 //   - 完成趋势(近 14 天每日完成数 — 简易条形图)
 //   - 按优先级分布(横条)
 //   - 按状态分布(横条)
@@ -12,14 +13,14 @@
 // Karma 分数(类 Todoist)展示在顶部 — 用 7 日完成数加权算出一个 0-1000 的相对分数。
 
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../shared/store';
 import { useTaskStore } from '../store/taskStore';
-import type { Priority, TaskStatus } from '../../shared/types';
+import { generateInsights, type InsightSuggestion, type InsightSeverity } from '../../shared/utils/insightsEngine';
+import { startOfDay, dateKey, isSameDay } from '../../shared/utils/dateUtils';
+import { PRIORITY_ORDER, PRIORITY_LABELS, STATUS_ORDER, STATUS_LABELS } from '../../shared/constants/labels';
+import type { Priority } from '../../shared/types';
 
-const PRIORITY_ORDER: Priority[] = ['low', 'medium', 'high', 'urgent', 'critical'];
-const PRIORITY_LABEL: Record<Priority, string> = {
-  low: '低', medium: '中', high: '高', urgent: '紧急', critical: '关键',
-};
 const PRIORITY_COLOR: Record<Priority, string> = {
   low: 'bg-slate-300 dark:bg-slate-600',
   medium: 'bg-blue-400',
@@ -27,25 +28,6 @@ const PRIORITY_COLOR: Record<Priority, string> = {
   urgent: 'bg-orange-500',
   critical: 'bg-rose-500',
 };
-
-const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'waiting', 'delegated', 'completed', 'cancelled', 'on-hold'];
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  'todo': '待办', 'in-progress': '进行中', 'waiting': '等待', 'delegated': '已委派',
-  'completed': '已完成', 'cancelled': '已取消', 'on-hold': '暂停',
-};
-
-function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function dateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function StatCard({
   label,
@@ -98,9 +80,56 @@ function BarRow({
   );
 }
 
+const SEVERITY_STYLE: Record<InsightSeverity, { badge: string; border: string; icon: string }> = {
+  critical: { badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300', border: 'border-rose-300 dark:border-rose-800', icon: '⚠️' },
+  warn: { badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', border: 'border-amber-300 dark:border-amber-800', icon: '⚡' },
+  info: { badge: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300', border: 'border-sky-200 dark:border-sky-800', icon: '💡' },
+};
+
+const SEVERITY_LABEL: Record<InsightSeverity, string> = {
+  critical: '紧急',
+  warn: '注意',
+  info: '建议',
+};
+
+function InsightCard({ suggestion, onAction }: { suggestion: InsightSuggestion; onAction: (url: string) => void }) {
+  const style = SEVERITY_STYLE[suggestion.severity];
+  return (
+    <div className={`rounded-lg border bg-white p-3 dark:bg-slate-800 sm:p-4 ${style.border}`}>
+      <div className="flex items-start gap-2">
+        <span className="text-base leading-6" aria-hidden="true">{style.icon}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{suggestion.title}</h3>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] ${style.badge}`}>{SEVERITY_LABEL[suggestion.severity]}</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{suggestion.detail}</p>
+          {suggestion.actionLabel && suggestion.actionUrl && (
+            <button
+              type="button"
+              onClick={() => onAction(suggestion.actionUrl!)}
+              className="mt-2 text-xs font-medium text-primary hover:underline"
+            >
+              {suggestion.actionLabel} →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InsightsPage() {
   const tasks = useTaskStore((s) => s.tasks);
   const projects = useAppStore((s) => s.projects);
+  const habits = useAppStore((s) => s.habits);
+  const goals = useAppStore((s) => s.goals);
+  const navigate = useNavigate();
+
+  const suggestions = useMemo(
+    () => generateInsights({ tasks, habits, goals }),
+    [tasks, habits, goals],
+  );
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -143,24 +172,37 @@ export function InsightsPage() {
     const maxDaily = Math.max(1, ...last14Days.map((d) => d.count));
 
     // 按优先级 / 状态 / 项目分布(基于 active 任务)
+    // 复杂度优化:原来 3 组 map×filter 是 O((12+P)×n);改为单遍 reduce 累加 3 个计数表。
+    const priorityCount: Record<string, number> = {};
+    const statusCount: Record<string, number> = {};
+    const projectCount: Record<string, number> = {};
+    let noProject = 0;
+    for (const t of active) {
+      priorityCount[t.priority] = (priorityCount[t.priority] ?? 0) + 1;
+      statusCount[t.status] = (statusCount[t.status] ?? 0) + 1;
+      if (t.projectId) {
+        projectCount[t.projectId] = (projectCount[t.projectId] ?? 0) + 1;
+      } else {
+        noProject++;
+      }
+    }
     const byPriority = PRIORITY_ORDER.map((p) => ({
       key: p,
-      label: PRIORITY_LABEL[p],
-      count: active.filter((t) => t.priority === p).length,
+      label: PRIORITY_LABELS[p],
+      count: priorityCount[p] ?? 0,
       color: PRIORITY_COLOR[p],
     }));
     const byStatus = STATUS_ORDER.map((s) => ({
       key: s,
-      label: STATUS_LABEL[s],
-      count: active.filter((t) => t.status === s).length,
+      label: STATUS_LABELS[s],
+      count: statusCount[s] ?? 0,
     }));
     const byProject = projects.map((p) => ({
       key: p.id,
       label: p.name,
       color: p.color,
-      count: active.filter((t) => t.projectId === p.id).length,
+      count: projectCount[p.id] ?? 0,
     }));
-    const noProject = active.filter((t) => !t.projectId).length;
 
     // Karma:7 日完成数 × 10 + 14 日完成数 × 5,封顶 1000
     const last7Sum = last14Days.slice(7).reduce((s, d) => s + d.count, 0);
@@ -196,6 +238,18 @@ export function InsightsPage() {
           全部数据来自本地任务,实时计算。Karma 分数反映你近 14 天的完成节奏。
         </p>
       </div>
+
+      {/* 个性化建议(D5 本地引擎,纯规则派生,非远程 LLM) */}
+      {suggestions.length > 0 && (
+        <section aria-label="个性化建议" className="space-y-2">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">给你的建议</h2>
+          <div className="space-y-2">
+            {suggestions.map((s) => (
+              <InsightCard key={s.id} suggestion={s} onAction={(url) => navigate(url)} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 顶部统计卡 */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
@@ -313,8 +367,3 @@ export function InsightsPage() {
   );
 }
 
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate();
-}

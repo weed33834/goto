@@ -1,11 +1,9 @@
-# TaskFlow 开发者指南
+# Goto 开发者指南
 
 > **最后更新**:2026-07-20
 >
-> 本文档面向当前 **纯浏览器 Web 应用** 架构(仓库 `desktop/`:Vite + React 18 +
-> Zustand 4 + TypeScript 5,数据存 IndexedDB,密钥经 Web Crypto / PBKDF2 派生)。
-> 早期版本基于 React Native + Expo 移动端 + Electron 桌面端 + SQLCipher,
-> 相关代码与文档条目已删除,以代码为准。
+> 本文档面向当前 Goto **纯浏览器 Web 应用** 架构(仓库 `desktop/`:Vite + React 18 +
+> Zustand 4 + TypeScript 5,数据存 IndexedDB,密钥经 Web Crypto / argon2id 派生)。
 
 ---
 
@@ -58,7 +56,7 @@ git branch -a  # 本地分支
 ## 二、项目结构
 
 ```
-taskflow/
+goto/
 ├── desktop/                # 纯浏览器 Web 应用(Vite + React 18 + Zustand 4)
 │   ├── src/
 │   │   ├── renderer/       # React UI
@@ -110,14 +108,11 @@ taskflow/
 │   └── Dockerfile / docker-compose.yml
 ├── docs/                   # 文档
 │   ├── ROADMAP.md
-│   ├── GOTO_PIVOT_PLAN.md
 │   ├── DEVELOPER_GUIDE.md  # 本文档
-│   ├── desktop-user-guide.md
 │   ├── TEST_PLAN.md
 │   ├── relay-deployment.md
 │   ├── fuzzing.md
-│   └── security/           # SECURITY_TRACKER / CII_COMPLIANCE_REPORT / 审计报告
-├── .github/workflows/      # CI/CD 工作流(ci / e2e / audit / 等)
+├── .github/workflows/      # CI 工作流(ci.yml: desktop / e2e / backend / relay)
 ├── README.md / README.zh-CN.md
 ├── CHANGELOG.md
 ├── PRIVACY.md / SECURITY.md / TERMS.md / FAQ.md / SUPPORT.md
@@ -151,7 +146,7 @@ pnpm install          # 首次安装(已锁 pnpm-lock.yaml)
 pnpm dev              # 启动 Vite dev server(默认 5173)
 pnpm typecheck        # TypeScript 类型检查(tsc --noEmit)
 pnpm lint             # ESLint 检查
-pnpm test             # Vitest 单元测试(494 passed / 26 skipped)
+pnpm test             # Vitest 单元测试(550 passed / 26 skipped)
 pnpm build            # 生产构建,产物在 dist/renderer/
 ```
 
@@ -223,7 +218,7 @@ cd relay && npx tsc --noEmit && npm test
 - 禁止 force push
 - 禁止删除
 - 需要 1 个 approving review
-- 需要通过 status checks（Lint、Test/Build、Verify Project Setup）
+- 需要通过 status checks(desktop: lint/typecheck/unit/build | e2e | backend: ruff/mypy/pytest | relay: typecheck/test/build)
 - 管理员也需要遵守规则
 
 ---
@@ -235,20 +230,18 @@ cd relay && npx tsc --noEmit && npm test
 - **永远不要**在代码中硬编码密钥、token、密码
 - 使用环境变量或 `.env` 文件（已在 `.gitignore` 中排除）
 - `.env.example` 只包含占位符
-- gitleaks 会在 CI 中扫描密钥泄露
+- 仓库根目录有 `.gitleaks.toml` 配置,可在本地运行 gitleaks 扫描
 
 ### 6.2 依赖安全
 
 - 所有 GitHub Actions 使用 SHA pin（不用 tag）
 - 依赖更新由维护者手动管理（无自动 PR 机器人）
-- 依赖审查工作流拒绝 GPL-3.0/AGPL-3.0 许可
 - 定期运行 `npm audit` 和 `pip audit`
 
 ### 6.3 代码安全
 
 - 后端使用 SQLAlchemy ORM（防 SQL 注入）
-- 前端使用 expo-secure-store（敏感数据存储）
-- 桌面端使用 SQLCipher（数据库加密）
+- 前端使用 secureStorage(IndexedDB + Web Crypto / argon2id)存储敏感数据
 - 所有用户输入需验证和清洗
 
 ---
@@ -262,7 +255,6 @@ cd relay && npx tsc --noEmit && npm test
 | 前端 | 170+ | 覆盖 store slices、utils、API、hooks |
 | 后端 | 49+ | 覆盖 API、核心逻辑、fuzz |
 | Relay | 8+ | 覆盖认证、连接、消息 |
-| 桌面端 | 164+ | 覆盖同步、加密、IPC |
 
 ### 7.2 测试文件命名
 

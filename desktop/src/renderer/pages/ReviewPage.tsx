@@ -18,15 +18,10 @@ import { useAppStore } from '../../shared/store';
 import { useTaskStore } from '../store/taskStore';
 import { Button } from '../components/common/Button';
 import { TaskCard } from '../components/task/TaskCard';
+import { startOfDay } from '../../shared/utils/dateUtils';
 
 const STORAGE_KEY = 'goto.reviewNotes';
 const ARCHIVE_THRESHOLD_DAYS = 30;
-
-function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
 
 function loadNotes(): string {
   try {
@@ -63,37 +58,51 @@ export function ReviewPage() {
   }, [weekOffset]);
 
   const sections = useMemo(() => {
-    const completedThisWeek = tasks.filter((t) => {
-      if (!t.completed || !t.completedAt) return false;
-      const c = new Date(t.completedAt);
-      return c >= range.monday && c <= range.sunday;
-    });
-    const createdThisWeekIncomplete = tasks.filter((t) => {
-      if (t.completed) return false;
-      const c = new Date(t.createdAt);
-      return c >= range.monday && c <= range.sunday;
-    });
-    const overdue = tasks.filter((t) => {
-      if (t.completed) return false;
-      if (!t.dueDate) return false;
-      return new Date(t.dueDate) < range.today;
-    });
-    const upcomingThisWeek = tasks.filter((t) => {
-      if (t.completed) return false;
-      if (!t.dueDate) return false;
-      const d = new Date(t.dueDate);
-      return d >= range.monday && d <= range.sunday;
-    });
+    // 复杂度优化:原来 4 次 tasks.filter 是 O(4n);改为单遍分桶到 4 个数组。
+    // projectSummary 的项目统计也并入同一遍,用 Map 累加 done/total。
+    const completedThisWeek: typeof tasks = [];
+    const createdThisWeekIncomplete: typeof tasks = [];
+    const overdue: typeof tasks = [];
+    const upcomingThisWeek: typeof tasks = [];
+    const projectStats = new Map<string, { done: number; total: number }>();
 
-    // 项目摘要:本周完成进度
+    for (const t of tasks) {
+      // 项目摘要累加(排除已归档)
+      if (t.projectId && !t.isArchived) {
+        const s = projectStats.get(t.projectId) ?? { done: 0, total: 0 };
+        s.total++;
+        if (t.completed) s.done++;
+        projectStats.set(t.projectId, s);
+      }
+
+      if (t.completed) {
+        if (t.completedAt) {
+          const c = new Date(t.completedAt);
+          if (c >= range.monday && c <= range.sunday) completedThisWeek.push(t);
+        }
+        continue;
+      }
+      // 未完成
+      const created = new Date(t.createdAt);
+      if (created >= range.monday && created <= range.sunday) {
+        createdThisWeekIncomplete.push(t);
+      }
+      if (t.dueDate) {
+        const d = new Date(t.dueDate);
+        // 保持原 4-filter 语义:overdue 与 upcoming 不互斥(本周内已过截止仍算逾期,
+        // 也算本周 upcoming),独立判定。
+        if (d < range.today) overdue.push(t);
+        if (d >= range.monday && d <= range.sunday) upcomingThisWeek.push(t);
+      }
+    }
+
     const projectSummary = projects
       .map((p) => {
-        const projectTasks = tasks.filter((t) => t.projectId === p.id && !t.isArchived);
-        const done = projectTasks.filter((t) => t.completed).length;
-        const total = projectTasks.length;
-        return { id: p.id, name: p.name, color: p.color, done, total };
+        const s = projectStats.get(p.id);
+        if (!s || s.total === 0) return null;
+        return { id: p.id, name: p.name, color: p.color, done: s.done, total: s.total };
       })
-      .filter((p) => p.total > 0);
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
     return {
       completedThisWeek,

@@ -14,6 +14,9 @@ import { Sidebar } from './components/layout/Sidebar';
 import { MobileHeader } from './components/layout/MobileHeader';
 import { Toaster } from './components/common/Toaster';
 import { KeyboardShortcutsHelp } from './components/common/KeyboardShortcutsHelp';
+import { CommandPalette } from './components/common/CommandPalette';
+// P1-3:同步冲突解决弹窗,订阅 activeModal === 'conflict-dialog'。
+import { ConflictDialog } from './components/sync/ConflictDialog';
 // useOnboarding 从独立文件导入,避免静态拉入 framer-motion 破坏 Onboarding 组件的 lazy chunk
 import { useOnboarding } from './features/onboarding/useOnboarding';
 
@@ -105,6 +108,10 @@ const TagsPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
+// b1:智能列表(Filter DSL 查询页 + 已保存列表)
+const SmartListPage = lazy(() =>
+  import('./pages/SmartListPage').then((m) => ({ default: m.SmartListPage })),
+);
 // Phase 1.10 / 2.1 / 2.2 / 2.3:项目详情 / 看板 / 统计 / 回顾
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })),
@@ -117,6 +124,30 @@ const InsightsPage = lazy(() =>
 );
 const ReviewPage = lazy(() =>
   import('./pages/ReviewPage').then((m) => ({ default: m.ReviewPage })),
+);
+// s1:加密时间胶囊 — 独立页,复用 VaultItem 体系,自动继承 E2EE 同步。
+const TimeCapsulePage = lazy(() =>
+  import('./pages/TimeCapsulePage').then((m) => ({ default: m.TimeCapsulePage })),
+);
+// s2:番茄钟专注页 — 复用 userPreferences.pomodoroSettings,usePomodoro 状态机驱动。
+const PomodoroPage = lazy(() =>
+  import('./pages/PomodoroPage').then((m) => ({ default: m.PomodoroPage })),
+);
+// s3:习惯追踪页 — habitsSlice + HabitHeatmap,本地持久化(不走 E2EE 同步)。
+const HabitPage = lazy(() =>
+  import('./pages/HabitPage').then((m) => ({ default: m.HabitPage })),
+);
+// D3:任务模板页 — templatesSlice,inline 表单 + 卡片列表,应用模板即创建任务。
+const TemplatePage = lazy(() =>
+  import('./pages/TemplatePage').then((m) => ({ default: m.TemplatePage })),
+);
+// D4:OKR 目标页 — goalsSlice,按周期分组,KR 进度自动汇总到目标。
+const GoalPage = lazy(() =>
+  import('./pages/GoalPage').then((m) => ({ default: m.GoalPage })),
+);
+// 插件 / Skill 管理页 — pluginsSlice,启停 / 新建 / 导入 / 试用。
+const PluginPage = lazy(() =>
+  import('./pages/PluginPage').then((m) => ({ default: m.PluginPage })),
 );
 
 function PageFallback() {
@@ -238,13 +269,14 @@ function AppContent() {
   // 全局键盘快捷键:
   //   mod+l → 锁定应用 (替代之前 app:lock 事件,webAPI.emitEvent 是死代码)
   //   mod+n → 跳到今日任务
-  //   mod+k / / → 跳到搜索
+  //   mod+k → 打开命令面板(b2:跳页/操作/搜任务一站式入口)
+  //   /     → 跳到搜索(轻量单字符入口,与 mod+k 互补)
   //   mod+b → 折叠/展开侧栏
   //   ?     → 显示快捷键帮助浮层(P1-1)
   useKeyboardShortcuts({
     'mod+l': () => lock(),
     'mod+n': () => navigate('/today'),
-    'mod+k': () => navigate('/search'),
+    'mod+k': () => useAppStore.getState().setActiveModal('command-palette'),
     '/': () => navigate('/search'),
     'mod+b': () => useAppStore.getState().toggleSidebar(),
     '?': () => useAppStore.getState().setActiveModal('shortcuts-help'),
@@ -279,9 +311,16 @@ function AppContent() {
                 <Route path="/kanban" element={<KanbanPage />} />
                 <Route path="/insights" element={<InsightsPage />} />
                 <Route path="/review" element={<ReviewPage />} />
+                <Route path="/time-capsule" element={<TimeCapsulePage />} />
+                <Route path="/pomodoro" element={<PomodoroPage />} />
+                <Route path="/habits" element={<HabitPage />} />
+                <Route path="/templates" element={<TemplatePage />} />
+                <Route path="/goals" element={<GoalPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/tags" element={<TagsPage />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/smart-lists" element={<SmartListPage />} />
+                <Route path="/plugins" element={<PluginPage />} />
                 <Route
                   path="/vault"
                   element={privacyMode ? <HiddenVault /> : <VaultPage />}
@@ -300,6 +339,11 @@ function AppContent() {
       )}
       {/* 快捷键帮助浮层(P1-1):订阅 activeModal === 'shortcuts-help' */}
       <KeyboardShortcutsHelp />
+      {/* 命令面板(b2):订阅 activeModal === 'command-palette',mod+k 唤起 */}
+      <CommandPalette />
+      {/* P1-3:同步冲突解决弹窗,订阅 activeModal === 'conflict-dialog'。
+          SyncSettingsPanel 横幅在有未决冲突时 setActiveModal('conflict-dialog') 唤起。 */}
+      <ConflictDialog />
       {/* Toaster 挂在所有内容之上,订阅 uiSlice.notifications 渲染 */}
       <Toaster />
     </div>

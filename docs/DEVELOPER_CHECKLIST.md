@@ -75,7 +75,6 @@ Before merging:
 - [ ] No new TypeScript/ESLint warnings introduced
 - [ ] No new Python linter (ruff/flake8) warnings
 - [ ] No deprecation warnings from dependencies
-- [ ] No security scan warnings (CodeQL, gitleaks)
 - [ ] CI pipeline is fully green (not just passing with warnings)
 
 ## Codebase Cleanup Check

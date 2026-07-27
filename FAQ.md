@@ -1,8 +1,7 @@
 # FAQ
 
-> 本文档面向当前 **纯浏览器 Web 应用**(仓库 `desktop/`:Vite + React 18 + Zustand 4 + TypeScript 5,
-> 数据存 IndexedDB,密钥经 Web Crypto / PBKDF2 派生)。早期版本基于 Electron + 移动端 + SQLCipher,
-> 相关条目已替换或删除,以代码为准。
+> 本文档面向当前 Goto **纯浏览器 Web 应用**(仓库 `desktop/`:Vite + React 18 + Zustand 4 + TypeScript 5,
+> 数据存 IndexedDB,密钥经 Web Crypto / argon2id 派生)。
 
 ## Running it
 
@@ -33,7 +32,7 @@ rm -rf node_modules pnpm-lock.yaml && pnpm install
 
 **我忘了主密码,能找回吗?**
 
-不能。本机仅以 PBKDF2-SHA256 600,000 iterations 派生形式保存验证器(`2:saltHex:keyHex`),
+不能。本机仅以 argon2id (m=64MB t=3 p=4) 派生形式保存验证器,
 没有服务端、没有重置邮件、没有后门。如果你曾经导出过加密备份并记得备份密码,
 可以卸载应用 → 清空 IndexedDB → 重新设置主密码 → 用旧备份恢复。如果两者都没了,数据就没了。
 这是本地优先加密的代价,请把主密码离线写下来。
@@ -63,7 +62,7 @@ rm -rf node_modules pnpm-lock.yaml && pnpm install
 **我的数据存在哪?**
 
 IndexedDB,键空间按业务分库(`tasks` / `vault` / `projects` / `categories` / `tags` /
-`app_settings` / `security_settings` 等)。密钥派生用 PBKDF2-SHA256 600k 迭代,
+`app_settings` / `security_settings` 等)。密钥派生用 argon2id (m=64MB t=3 p=4),
 保险库字段用 AES-256-GCM 加密。**清浏览器站点数据 = 清空所有 Goto 数据**,操作前请先导出备份。
 
 **清浏览器数据后什么都没了,怎么办?**
@@ -86,8 +85,7 @@ IndexedDB,键空间按业务分库(`tasks` / `vault` / `projects` / `categories`
 
 可以。Web 端 ⇄ Web 端通过端到端加密同步,可选自托管 relay 做 NAT 穿透兜底。配对是一次性
 8 位码,5 分钟 TTL。配对成功后,LAN 直连优先,relay 兜底。relay 永远只看到密文。
-配置见 [docs/desktop-user-guide.md](docs/desktop-user-guide.md) 同步章节,协议栈见
-[ARCHITECTURE.md](ARCHITECTURE.md)。
+协议栈见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 保险库与剪贴板
 
@@ -178,7 +176,3 @@ Web Speech API 仅在 Chromium 内核浏览器中可用,且需要联网(第一�
 `desktop/dist/renderer/` 是纯静态 SPA,首屏 JS gzip ~103KB(远低于 250KB 预算),
 包含 React + Zustand + framer-motion + 业务代码。丢到任意静态主机(Netlify / Vercel /
 S3 + CloudFront / GitHub Pages)即可。
-
-**`web-deploy.yml` 上传的是哪个目录?**
-
-`desktop/dist/renderer/`。这是 GitHub Pages 上的部署版,内容与本地 `pnpm build` 产物一致。

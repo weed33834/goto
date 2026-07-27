@@ -1,8 +1,7 @@
 # Terms of Service — Goto
 
 > 本文档为 Phase A 阶段最小可用版本,Phase D 上线前由法务出具正式版。
-> 对应规划:`docs/GOTO_PIVOT_PLAN.md` §12.4。
-> 适用对象:Goto Web App(浏览器 / PWA)、桌面壳、Relay 自部署用户。
+> 适用对象:Goto Web App(浏览器 / PWA)、Relay 自部署用户。
 > 最近更新:2026-07-19
 
 ---
@@ -161,7 +160,7 @@ Goto(以下简称"本服务")是一款 **本地优先 + 端到端加密** 的任
 | 层 | 价格 | 功能 |
 |---|---|---|
 | Free | 0 | 全部核心机制 + Relay 自部署 + 多设备同步 ≤ 3 台 |
-| Pro(订阅) | $5/月 或 $48/年 | 独家资产增量(详见 `docs/GOTO_PIVOT_PLAN.md` §14.1) |
+| Pro(订阅) | $5/月 或 $48/年 | 独家资产增量 |
 | 创始人版 | $200(Phase D 上线 30 天窗口) | 永久使用 + 5 年免费更新 |
 
 ### 8.2 退款政策
@@ -268,7 +267,6 @@ Goto(以下简称"本服务")是一款 **本地优先 + 端到端加密** 的任
 |---|---|
 | `SECURITY.md` 中的 maintainer 渠道 | 一般咨询、投诉、法律文书送达 |
 | `privacy@goto.app`(待启用) | 隐私相关问题 |
-| `docs/security/SECURITY_TRACKER.md` | 安全漏洞追踪 |
 | GitHub / GitCode Issues | 功能反馈、Bug 报告 |
 
 ---

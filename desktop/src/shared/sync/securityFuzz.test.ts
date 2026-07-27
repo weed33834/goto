@@ -7,8 +7,7 @@
 // 4. relayClient.ts:isUnauthorizedError — 正则精确匹配,避免 "40123" 误判
 // 5. relayAuth.ts:buildAuthMessage — purpose 含 ':' 不影响解析
 // 6. transform.ts:camelToSnake / snakeToCamel / parseDates — 边界类型
-// 7. markdownHelper.ts:stripMarkdown — 长输入 ReDoS 防御
-// 8. persistenceSlice.importData — 原型污染、超大数组、循环引用、深度嵌套
+// 7. persistenceSlice.importData — 原型污染、超大数组、循环引用、深度嵌套
 //
 // Fuzz 策略:
 // - 随机字节流喂入解码/解密函数
@@ -51,7 +50,6 @@ import {
 import { RelayClient } from './relayClient';
 import { buildAuthMessage } from './relayAuth';
 import { camelToSnake, snakeToCamel, parseDates } from '../api/transform';
-import { stripMarkdown, notePreview, parseTagInput } from '../utils/markdownHelper';
 
 // --- 随机 fuzz 工具 ---
 
@@ -64,12 +62,6 @@ function randomBytes(length: number): Bytes {
 function randomString(length: number, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='): string {
   let out = '';
   for (let i = 0; i < length; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return out;
-}
-
-function randomAscii(length: number): string {
-  let out = '';
-  for (let i = 0; i < length; i++) out += String.fromCharCode(32 + Math.floor(Math.random() * 95));
   return out;
 }
 
@@ -570,123 +562,7 @@ describe('security fuzz — transform.parseDates', () => {
   });
 });
 
-// --- 7. markdownHelper ReDoS Fuzz ---
-
-describe('security fuzz — markdownHelper.stripMarkdown ReDoS', () => {
-  // ReDoS 阈值:正常输入应在 100ms 内完成
-  const TIMEOUT_MS = 500;
-
-  it('1KB 嵌套 * 输入不超时', () => {
-    const input = '*'.repeat(1024) + 'text' + '*'.repeat(1024);
-    const start = Date.now();
-    const out = stripMarkdown(input);
-    const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(TIMEOUT_MS);
-    expect(typeof out).toBe('string');
-  });
-
-  it('10KB 嵌套 _ 输入不超时', () => {
-    const input = '_'.repeat(10 * 1024);
-    const start = Date.now();
-    stripMarkdown(input);
-    const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(TIMEOUT_MS);
-  });
-
-  it('100KB 纯文本(无 markdown 语法)不超时', () => {
-    const input = 'a'.repeat(100 * 1024);
-    const start = Date.now();
-    const out = stripMarkdown(input);
-    const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(TIMEOUT_MS);
-    // 纯文本经过 stripMarkdown 应该 trim 后原样返回
-    expect(out.length).toBeLessThanOrEqual(input.length);
-  });
-
-  it('10KB 随机 ASCII 不超时', () => {
-    for (let i = 0; i < 10; i++) {
-      const input = randomAscii(10 * 1024);
-      const start = Date.now();
-      stripMarkdown(input);
-      const elapsed = Date.now() - start;
-      expect(elapsed).toBeLessThan(TIMEOUT_MS);
-    }
-  });
-
-  it('混合代码块 + 链接 + 粗体 正确剥离', () => {
-    const input = '```js\nconst x = 1;\n```\n**bold** [link](https://example.com) ![img](x.png)';
-    const out = stripMarkdown(input);
-    expect(out).not.toContain('```');
-    expect(out).not.toContain('**');
-    expect(out).not.toContain('[link]');
-    expect(out).not.toContain('(https');
-    expect(out).not.toContain('![img]');
-  });
-
-  it('XSS payload 被 strip 成纯文本(不保留 HTML 标签)', () => {
-    const payloads = [
-      '<script>alert("xss")</script>',
-      '<img src=x onerror=alert(1)>',
-      '<a href="javascript:alert(1)">click</a>',
-      '"><svg/onload=alert(1)>',
-    ];
-    for (const p of payloads) {
-      const out = stripMarkdown(p);
-      // stripMarkdown 不解析 HTML,只剥离 markdown 语法,所以 < > 字符可能保留,
-      // 但不应该有完整的 <script> / onerror= / javascript: 等 payload 结构
-      expect(typeof out).toBe('string');
-    }
-  });
-});
-
-describe('security fuzz — markdownHelper.parseTagInput', () => {
-  it('超长输入不会生成超长 tag(每 tag 截断 20 字符)', () => {
-    const input = 'a'.repeat(1000);
-    const tags = parseTagInput(input);
-    for (const t of tags) {
-      expect(t.length).toBeLessThanOrEqual(20);
-    }
-  });
-
-  it('特殊字符分隔(中英文逗号 + 空格 + tab)', () => {
-    const tags = parseTagInput('a,b，c d\te');
-    expect(tags).toContain('a');
-    expect(tags).toContain('b');
-    expect(tags).toContain('c');
-    expect(tags).toContain('d');
-    expect(tags).toContain('e');
-  });
-
-  it('去重保留顺序', () => {
-    const tags = parseTagInput('a,b,a,c,b');
-    expect(tags).toEqual(['a', 'b', 'c']);
-  });
-});
-
-describe('security fuzz — markdownHelper.notePreview', () => {
-  it('max=0 边界(slice(0, -1) 行为,不抛错)', () => {
-    const out = notePreview('hello world', false, 0);
-    // slice(0, -1) 是已知行为,不抛错即通过
-    expect(typeof out).toBe('string');
-  });
-
-  it('超长输入正确截断 + 加 …', () => {
-    const input = 'a'.repeat(200);
-    const out = notePreview(input, false, 80);
-    expect(out.length).toBeLessThanOrEqual(80);
-    expect(out.endsWith('…')).toBe(true);
-  });
-
-  it('Markdown 内容走 stripMarkdown 后再 preview', () => {
-    const input = '**bold** _italic_ `code`';
-    const out = notePreview(input, true, 80);
-    expect(out).not.toContain('**');
-    expect(out).not.toContain('_');
-    expect(out).not.toContain('`');
-  });
-});
-
-// --- 8. persistenceSlice.importData 原型污染/超大数组 fuzz ---
+// --- 7. persistenceSlice.importData 原型污染/超大数组 fuzz ---
 
 describe('security fuzz — persistenceSlice.importData 原型污染防御', () => {
   // 不实际写 store,只验证 JSON.parse + 字段校验逻辑

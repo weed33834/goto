@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Switch } from '../components/common/Switch';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -9,7 +9,16 @@ import { useTaskStore } from '../store/taskStore';
 import { useVaultStore } from '../store/vaultStore';
 import { useAppStore } from '../../shared/store';
 import { SyncSettingsPanel } from '../components/sync/SyncSettingsPanel';
-import type { SecuritySettings } from '../../shared/types';
+import {
+  setApiBaseUrl,
+  saveStoredApiBaseUrl,
+  clearStoredApiBaseUrl,
+  loadStoredApiBaseUrl,
+  testApiConnection,
+  type ConnectionTestResult,
+} from '../../shared/api';
+import { setStoredAuth, clearStoredAuth, getStoredAuth } from '../../shared/utils/secureStorage';
+import { importTasksFromFile, type ImportFormat } from '../../shared/importers';
 
 const themeLabels: Record<ThemeMode, string> = {
   light: '浅色',
@@ -29,8 +38,6 @@ export function SettingsPage() {
   const changePassword = useAuthStore((s) => s.changePassword);
   const [isBusy, setIsBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
   // P1-10:修改主密码 inline 表单
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [oldPwd, setOldPwd] = useState('');
@@ -40,58 +47,94 @@ export function SettingsPage() {
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
 
+  // P0-2:后端连接区状态 —— URL/token/测试结果/保存中。
+  const [apiUrl, setApiUrl] = useState('');
+  const [apiToken, setApiToken] = useState('');
+  const [apiTestBusy, setApiTestBusy] = useState(false);
+  const [apiTestResult, setApiTestResult] = useState<ConnectionTestResult | null>(null);
+  const [apiSaveBusy, setApiSaveBusy] = useState(false);
+  const [apiSavedHint, setApiSavedHint] = useState<string | null>(null);
+
+  // P1-1:第三方导入状态 —— 解析中/解析结果/错误详情。
+  // 复用 isBusy 与 feedback,与备份按钮共享 disabled 互斥。
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    format: ImportFormat;
+    imported: number;
+    errors: number;
+    skipped: number;
+    errorDetails?: { row: number; message: string }[];
+  } | null>(null);
+  const addTask = useAppStore((s) => s.addTask);
+
+  // 启动时从持久化存储加载已存的 URL/token 回填表单。
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const available = await window.gotoAPI.biometric.isAvailable();
-      const enabled = await window.gotoAPI.biometric.isEnabled();
-      if (mounted) {
-        setBiometricAvailable(available);
-        setBiometricEnabled(enabled);
-      }
+    void (async () => {
+      const storedUrl = await loadStoredApiBaseUrl();
+      if (storedUrl) setApiUrl(storedUrl);
+      const storedAuth = await getStoredAuth();
+      if (storedAuth?.token) setApiToken(storedAuth.token);
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [settings.lockMethod]);
+  }, []);
+
+  const handleTestApi = async () => {
+    if (!apiUrl.trim()) {
+      setApiTestResult({ ok: false, status: 0, latencyMs: 0, error: '请输入后端 URL' });
+      return;
+    }
+    setApiTestBusy(true);
+    setApiTestResult(null);
+    try {
+      const result = await testApiConnection(apiUrl.trim(), apiToken.trim() || undefined);
+      setApiTestResult(result);
+    } finally {
+      setApiTestBusy(false);
+    }
+  };
+
+  const handleSaveApi = async () => {
+    setApiSaveBusy(true);
+    setApiSavedHint(null);
+    try {
+      const trimmedUrl = apiUrl.trim();
+      const trimmedToken = apiToken.trim();
+      if (trimmedUrl) {
+        // 应用到运行时 + 持久化 URL(browserStorage 明文,非敏感)
+        setApiBaseUrl(trimmedUrl);
+        await saveStoredApiBaseUrl(trimmedUrl);
+        // token 走 secureStorage 加密存储
+        if (trimmedToken) {
+          await setStoredAuth({ source: 'manual-config' }, trimmedToken);
+        } else {
+          await clearStoredAuth();
+        }
+        setApiSavedHint('已保存后端连接配置');
+      } else {
+        // URL 为空:清除全部配置
+        await clearStoredApiBaseUrl();
+        await clearStoredAuth();
+        setApiSavedHint('已清除后端连接配置');
+      }
+      setTimeout(() => setApiSavedHint(null), 4000);
+    } finally {
+      setApiSaveBusy(false);
+    }
+  };
+
+  const handleClearApi = async () => {
+    setApiUrl('');
+    setApiToken('');
+    setApiTestResult(null);
+    await clearStoredApiBaseUrl();
+    await clearStoredAuth();
+    setApiSavedHint('已清除后端连接配置');
+    setTimeout(() => setApiSavedHint(null), 4000);
+  };
 
   const showFeedback = (message: string) => {
     setFeedback(message);
     setTimeout(() => setFeedback(null), 4000);
-  };
-
-  const handleLockMethodChange = async (method: SecuritySettings['lockMethod']) => {
-    if (method === settings.lockMethod) return;
-
-    if (method === 'biometric') {
-      if (!biometricAvailable) {
-        showFeedback('当前设备不支持生物识别');
-        return;
-      }
-      const password = window.prompt('启用生物识别需要先验证主密码');
-      if (!password) return;
-
-      setIsBusy(true);
-      try {
-        const success = await window.gotoAPI.biometric.enable(password);
-        if (!success) {
-          showFeedback('密码验证失败，无法启用生物识别');
-          return;
-        }
-        await update({ lockMethod: 'biometric' });
-        setBiometricEnabled(true);
-        showFeedback('生物识别已启用');
-      } finally {
-        setIsBusy(false);
-      }
-      return;
-    }
-
-    if (settings.lockMethod === 'biometric') {
-      await window.gotoAPI.biometric.disable();
-      setBiometricEnabled(false);
-    }
-    await update({ lockMethod: method });
   };
 
   const handleExport = async () => {
@@ -168,6 +211,48 @@ export function SettingsPage() {
       showFeedback(result.success ? `导入成功：${result.message}` : `导入失败：${result.message}`);
     } finally {
       setIsBusy(false);
+    }
+  };
+
+  // P1-1:第三方数据导入 —— 隐藏 <input type="file"> + 按钮触发。
+  // 解析后逐条 addTask(走 tasksSlice 的 notification + 撤销 + API 同步链路)。
+  // 错误详情只展示前 5 条,避免长列表撑爆设置页。
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportBusy(true);
+    setImportResult(null);
+    try {
+      const result = await importTasksFromFile(file);
+      result.tasks.forEach((t) => addTask(t));
+      setImportResult({
+        format: result.format,
+        imported: result.tasks.length,
+        errors: result.errors.length,
+        skipped: result.skipped,
+        errorDetails: result.errors.length > 0 ? result.errors.slice(0, 5) : undefined,
+      });
+      showFeedback(
+        result.format === 'unknown'
+          ? `无法识别 ${file.name} 的格式`
+          : `已从 ${file.name} 导入 ${result.tasks.length} 个任务${
+              result.errors.length > 0 ? `,${result.errors.length} 行解析失败` : ''
+            }`,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setImportResult({
+        format: 'unknown',
+        imported: 0,
+        errors: 1,
+        skipped: 0,
+        errorDetails: [{ row: 0, message }],
+      });
+      showFeedback(`导入失败:${message}`);
+    } finally {
+      setImportBusy(false);
+      // 清空 value 让用户能重新选择同一文件(change 事件不重复触发)
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -281,28 +366,11 @@ export function SettingsPage() {
             <div>
               <p className="mb-2 text-sm text-slate-700 dark:text-slate-300">解锁方式</p>
               <div className="flex flex-wrap gap-2">
-                {/* P1 修复:Web 端 biometric 永远返回 false,渲染该按钮只会让用户点了失败。
-                    只在 biometricAvailable 为 true 时才显示,避免安慰剂式 UI。 */}
-                {(biometricAvailable
-                  ? (['password', 'biometric'] as const)
-                  : (['password'] as const)
-                ).map((method) => (
-                  <Button
-                    key={method}
-                    variant={settings.lockMethod === method ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => handleLockMethodChange(method)}
-                    disabled={isBusy || (method === 'biometric' && !biometricAvailable)}
-                  >
-                    {method === 'password' ? '主密码' : '生物识别'}
-                  </Button>
-                ))}
+                {/* Web 端仅支持主密码解锁;移除历史生物识别 UI。 */}
+                <Button variant="primary" size="sm" disabled>
+                  主密码
+                </Button>
               </div>
-              {settings.lockMethod === 'biometric' && !biometricEnabled && (
-                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  生物识别尚未录入，请选择后按提示验证主密码以启用。
-                </p>
-              )}
             </div>
             {/* P1-3:自动锁定时长从原 Switch(固定 5 分钟)升级为 select,
                 支持 1/5/15/30/60 分钟多档,以及"关闭"。
@@ -494,6 +562,138 @@ export function SettingsPage() {
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             备份文件使用解锁密码加密，仅能通过相同的解锁密码恢复。JSON 格式为明文，可与移动端互通。
           </p>
+          {/* P1-1:第三方数据导入 —— Todoist CSV / TickTick JSON 自动嗅探分发。
+              只迁移任务基本字段(标题/优先级/日期/重复规则),不迁移子任务/评论/附件。 */}
+          <div className="mt-4 rounded-md border border-slate-200 p-3 dark:border-slate-700">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">从其他应用导入</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              支持 Todoist CSV 与 TickTick JSON。根据文件扩展名自动识别格式,仅迁移任务基本字段(标题/优先级/日期/重复规则),子任务/评论/附件不迁移。
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.json,application/json,text/csv"
+              onChange={handleImportFile}
+              className="hidden"
+              aria-label="选择 Todoist CSV 或 TickTick JSON 文件"
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isBusy || importBusy}
+              >
+                {importBusy ? '解析中…' : '选择文件导入'}
+              </Button>
+              {importResult && (
+                <span
+                  role="status"
+                  className={`text-xs ${
+                    importResult.errors > 0 && importResult.imported === 0
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  格式 {importResult.format} · 导入 {importResult.imported} · 失败 {importResult.errors}
+                  {importResult.skipped > 0 ? ` · 跳过 ${importResult.skipped}` : ''}
+                </span>
+              )}
+            </div>
+            {importResult?.errorDetails && importResult.errorDetails.length > 0 && (
+              <ul className="mt-2 space-y-0.5 text-xs text-red-600 dark:text-red-400">
+                {importResult.errorDetails.map((err, i) => (
+                  <li key={`${err.row}-${i}`}>行 {err.row}:{err.message}</li>
+                ))}
+                {importResult.errors > importResult.errorDetails.length && (
+                  <li className="text-slate-500 dark:text-slate-400">
+                    …还有 {importResult.errors - importResult.errorDetails.length} 条错误未展示
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+        </div>
+        {/* P0-2:后端连接区 —— 让用户配置后端 URL + Bearer token,
+            并提供"测试连接"按钮验证可达性。配置持久化,启动时自动加载。 */}
+        <div>
+          <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">后端连接</h2>
+          <div className="space-y-3">
+            <Input
+              label="后端 URL"
+              type="url"
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              placeholder="https://api.goto.app 或 http://127.0.0.1:8000"
+              autoComplete="url"
+              spellCheck={false}
+            />
+            <Input
+              label="访问令牌 (Bearer Token)"
+              type="password"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder="留空表示不使用 token"
+              autoComplete="off"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleTestApi}
+                disabled={apiTestBusy || apiSaveBusy}
+              >
+                {apiTestBusy ? '测试中…' : '测试连接'}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleSaveApi}
+                disabled={apiSaveBusy || apiTestBusy}
+              >
+                {apiSaveBusy ? '保存中…' : '保存配置'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearApi}
+                disabled={apiSaveBusy || apiTestBusy}
+              >
+                清除
+              </Button>
+              {apiSavedHint && (
+                <span className="text-xs text-green-600 dark:text-green-400" role="status">
+                  {apiSavedHint}
+                </span>
+              )}
+            </div>
+            {apiTestResult && (
+              <div
+                role="status"
+                className={`rounded-md border p-2 text-xs ${
+                  apiTestResult.ok
+                    ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/40 dark:bg-green-900/10 dark:text-green-400'
+                    : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-400'
+                }`}
+              >
+                {apiTestResult.ok
+                  ? `✓ 连接成功 · ${apiTestResult.latencyMs}ms · HTTP ${apiTestResult.status}${
+                      apiTestResult.status === 401 || apiTestResult.status === 403
+                        ? '(后端可达,但 token 无效)'
+                        : ''
+                    }`
+                  : `✗ 连接失败 · ${apiTestResult.error ?? '未知错误'}${
+                      apiTestResult.status ? ` · HTTP ${apiTestResult.status}` : ''
+                    } · ${apiTestResult.latencyMs}ms`}
+              </div>
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              配置自托管后端以启用云端任务同步。URL 明文存储,token 经主密钥 AES-256-GCM 加密存储。留空 URL 退化为本地优先模式。
+            </p>
+          </div>
         </div>
         <div>
           <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">同步</h2>

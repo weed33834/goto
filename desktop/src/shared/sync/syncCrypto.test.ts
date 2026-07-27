@@ -165,7 +165,7 @@ describe('syncCrypto — HKDF-SHA256', () => {
     for (let i = 0; i < 32; i++) sharedSecret[i] = i;
     const salt = new Uint8Array(16);
     for (let i = 0; i < 16; i++) salt[i] = 100 + i;
-    const info = 'taskflow-sync-v1';
+    const info = 'goto-sync-v2';
 
     const wcKey = await deriveSessionKey(sharedSecret, salt, info);
     const crypto = require('crypto');
@@ -202,7 +202,7 @@ describe('syncCrypto — 会话密钥派生', () => {
 
     const wcKeys = await deriveSessionKeys(ss, salt, 'initiator');
     const crypto = require('crypto');
-    const info = 'taskflow-sync-v1';
+    const info = 'goto-sync-v2';
     const expectedSend = Buffer.from(
       crypto.hkdfSync('sha256', toBuffer(ss), toBuffer(salt), `${info}|initiator->responder`, 32),
     );

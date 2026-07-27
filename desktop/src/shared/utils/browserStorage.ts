@@ -1,11 +1,11 @@
 // 浏览器端 AsyncStorage 适配器。
-// 用 IndexedDB 实现 React Native AsyncStorage 的字符串 KV 接口,
-// 供原移动端 persistenceSlice / syncStorage 等模块在 Web 端复用。
+// 用 IndexedDB 实现 AsyncStorage 的字符串 KV 接口,
+// 供 persistenceSlice / syncStorage 等模块复用。
 //
-// 数据库: 'taskflow-async-storage',单个 object store 'kv',keyPath 为 'key'。
+// 数据库: 'goto-async-storage',单个 object store 'kv',keyPath 为 'key'。
 // 每条记录结构: { key: string, value: string }
 
-const DB_NAME = 'taskflow-async-storage';
+const DB_NAME = 'goto-async-storage';
 const DB_VERSION = 1;
 const STORE_NAME = 'kv';
 

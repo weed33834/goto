@@ -19,7 +19,8 @@ ground rules so your PR can land quickly and cleanly.
    - `security: …`    — security fix
 4. **Push your branch**: `git push -u origin feat/short-description`
 5. **Open a Pull Request** against `main`. Fill in the PR template.
-6. **Wait for CI** (gitleaks + CodeQL on every repo that has code).
+6. **Wait for CI** (desktop lint/typecheck/test/build + e2e + backend
+   ruff/mypy/pytest + relay vitest on every push and PR).
 7. **Squash-merge** is the default. One commit per logical change.
    The merge commit subject will become the PR title.
 
@@ -34,8 +35,8 @@ ground rules so your PR can land quickly and cleanly.
 ## Security
 
 - **Never commit secrets, tokens, API keys, or `.env` files.**
-  Push-protection is on; if you bypass it, **rotate the credential**.
-  See [SECURITY.md](./SECURITY.md).
+  The repo has a `.gitleaks.toml` config; if you accidentally commit a
+  credential, **rotate it immediately**. See [SECURITY.md](./SECURITY.md).
 - Don't paste stack traces that contain real user data in issues.
 - If you find a vulnerability, follow the
   [private disclosure process](./SECURITY.md) — do not open a public
@@ -46,8 +47,7 @@ ground rules so your PR can land quickly and cleanly.
 - Dependency updates are managed manually by maintainers. There is no
   bot that auto-opens or auto-merges dependency PRs.
 - When updating a dependency, open a normal PR, run CI, and merge after
-  review (the dependency-review workflow scans for known vulnerabilities
-  and disallowed licenses on every PR).
+  review.
 - Major-version bumps that touch lockfiles require extra care and a
   full review.
 

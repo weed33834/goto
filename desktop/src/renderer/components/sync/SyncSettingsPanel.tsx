@@ -15,8 +15,13 @@ export function SyncSettingsPanel() {
   const e2eeSync = useAppStore((s) => s.e2eeSync);
   const smkReady = useAppStore((s) => s.smkReady);
   const setRelayUrl = useAppStore((s) => s.setRelayUrl);
+  // P1-3:未决冲突计数 + 打开 ConflictDialog。
+  const pendingConflicts = useAppStore((s) => s.pendingConflicts);
+  const setActiveModal = useAppStore((s) => s.setActiveModal);
 
   const { addDevice, joinDevice, cancelPairing, removeDevice, resetSync } = useSyncRuntime();
+
+  const unresolvedConflictCount = pendingConflicts.filter((c) => c.resolution === null).length;
 
   // 中继地址输入框本地态：提交时才写入 store，避免每次按键触发持久化
   const [relayInput, setRelayInput] = useState(syncConfig.relayUrl ?? '');
@@ -36,6 +41,30 @@ export function SyncSettingsPanel() {
 
   return (
     <div className="space-y-6">
+      {/* P1-3:未决冲突提示横幅。点击唤起 ConflictDialog 逐条解决。 */}
+      {unresolvedConflictCount > 0 && (
+        <section
+          role="alert"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-900/30"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 flex-1 text-xs text-amber-900 dark:text-amber-100">
+              <strong className="font-semibold">{unresolvedConflictCount}</strong>
+              {' '}
+              个同步冲突待解决。远端版本已自动落库(数据未丢),但本地编辑可能被覆盖。
+              点击右侧按钮逐条选择保留本地或接受远端。
+            </div>
+            <Button
+              size="sm"
+              className="shrink-0"
+              onClick={() => setActiveModal('conflict-dialog')}
+            >
+              解决冲突
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* 中继服务器配置 */}
       <section className="space-y-2">
         <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">中继服务器</h3>

@@ -5,10 +5,8 @@ depending on what you need.
 
 ## Quick answers
 
-- **Usage questions** — read the [user guide](docs/desktop-user-guide.md)
-  and the [FAQ](FAQ.md) first; most common questions are already covered.
-- **Roadmap & status** — see [docs/ROADMAP.md](docs/ROADMAP.md) and the
-  [Goto Pivot Plan](docs/GOTO_PIVOT_PLAN.md) for what's done and what's
+- **Usage questions** — read the [FAQ](FAQ.md) first; most common questions are already covered.
+- **Roadmap & status** — see [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and what's
   next.
 - **Architecture deep-dive** — [ARCHITECTURE.md](ARCHITECTURE.md)
   walks through the state model and the E2EE sync protocol stack.

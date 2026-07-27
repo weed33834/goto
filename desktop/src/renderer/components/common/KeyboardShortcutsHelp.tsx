@@ -21,8 +21,8 @@ const SHORTCUTS: ShortcutEntry[] = [
   { combo: '?', description: '显示本快捷键帮助', group: '全局' },
   { combo: 'Mod + L', description: '锁定应用(立即返回锁屏)', group: '全局' },
   { combo: 'Mod + B', description: '折叠 / 展开侧栏', group: '全局' },
-  { combo: 'Mod + K', description: '跳到搜索(可搜任务标题与描述)', group: '导航' },
-  { combo: '/', description: '跳到搜索(同 Mod + K,输入框更轻量触发)', group: '导航' },
+  { combo: 'Mod + K', description: '打开命令面板(跳页 / 操作 / 搜任务)', group: '导航' },
+  { combo: '/', description: '跳到搜索(轻量入口,与命令面板互补)', group: '导航' },
   { combo: 'Mod + N', description: '跳到今日任务并自动聚焦新建输入框', group: '导航' },
   { combo: 'Esc', description: '关闭弹层 / 取消编辑', group: '全局' },
 ];

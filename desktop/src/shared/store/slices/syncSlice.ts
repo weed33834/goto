@@ -24,8 +24,10 @@ import {
   loadSyncMasterKey,
   saveSyncMasterKey,
   deleteSyncMasterKey,
+  type SyncRecord,
 } from '../../sync/syncStorage';
 import { generateSyncMasterKey } from '../../sync/syncCrypto';
+import { generateId } from '../constants';
 
 /**
  * ensureDeviceIdentity 的 in-flight Promise 缓存。
@@ -73,6 +75,38 @@ export interface E2EESyncState {
   lastSyncAt: number | null;
   /** 当前活跃对端 deviceId（同步进行中的对端）。null 表示无活跃对端。 */
   activePeerDeviceId: string | null;
+}
+
+// ─── P1-3:冲突解决 UI ──────────────────────────────────────────────────
+
+/**
+ * 待解决的并发冲突。
+ *
+ * 当 SyncEngine 检测到版本向量互不支配(resolveConflict 返回 'concurrent')时,
+ * remote 已被自动落库(数据不丢),但本地版本被覆盖。本结构缓存 local 快照
+ * (落库前捕获),让用户能事后选择"恢复本地"。
+ *
+ * 不持久化:冲突是临时运行时状态,刷新后清空(SyncEngine 下次同步会重新检测)。
+ */
+export interface PendingConflict {
+  /** 冲突实例 id(非 recordId,一次同步可能产生多条) */
+  id: string;
+  /** 冲突记录的 recordId(通常 = Task.id) */
+  recordId: string;
+  /** 记录所属表(如 'tasks') */
+  tableName: string;
+  /** 触发冲突的对端设备 id */
+  peerDeviceId: string;
+  /** 本地版本快照(被 remote 覆盖前的)。null 表示本地原本无此记录(理论上不会 concurrent) */
+  localRecord: SyncRecord | null;
+  /** 远端版本(已落库) */
+  remoteRecord: SyncRecord;
+  /** 冲突发生时间戳(ms) */
+  occurredAt: number;
+  /** 用户决策:null=未决,'local'=选择恢复本地,'remote'=接受远端 */
+  resolution: 'local' | 'remote' | null;
+  /** 回滚是否已执行(避免 useSyncScheduler 重复 apply)。resolution='remote' 时直接置 true */
+  applied: boolean;
 }
 
 export interface SyncSlice {
@@ -160,6 +194,28 @@ export interface SyncSlice {
    * 设备重置 / 全部退出配对时调用。
    */
   resetE2EESync: () => Promise<void>;
+
+  // ─── P1-3:冲突解决 UI ──────────────────────────────────────────────────
+  /** 待解决的并发冲突列表。useSyncScheduler 的 onConcurrentWrite 回调推入。 */
+  pendingConflicts: PendingConflict[];
+  /**
+   * 推入一条冲突。由 useSyncScheduler 在 SyncEngine 触发 onConcurrentWrite 时调用。
+   * 同一 recordId 的未决冲突只保留最新一条(避免堆积)。
+   */
+  pushConflict: (conflict: Omit<PendingConflict, 'id' | 'occurredAt' | 'resolution' | 'applied'>) => void;
+  /**
+   * 设置用户对某条冲突的决策。useSyncScheduler 监听 resolution 变化执行回滚:
+   * 'local' → 用 localRecord 重新 applyRecord;'remote' → 仅标记 applied。
+   */
+  setConflictResolution: (conflictId: string, resolution: 'local' | 'remote') => void;
+  /**
+   * 标记冲突回滚已执行(useSyncScheduler 调用,避免重复 apply)。
+   */
+  markConflictApplied: (conflictId: string) => void;
+  /**
+   * 清除已解决(applied=true)的冲突。UI 可在用户关闭冲突面板时调用。
+   */
+  clearResolvedConflicts: () => void;
 }
 
 /**
@@ -268,6 +324,8 @@ export const createSyncSlice: StateCreator<AppStore, [], [], SyncSlice> = (set, 
   pairing: { ...INITIAL_PAIRING },
   e2eeSync: { ...INITIAL_E2EE_SYNC },
   smkReady: false,
+  // P1-3:冲突是临时运行时状态,不持久化(刷新后清空,SyncEngine 下次同步重新检测)。
+  pendingConflicts: [],
 
   setSyncConfig: (config) => {
     set({ syncConfig: config });
@@ -626,5 +684,52 @@ export const createSyncSlice: StateCreator<AppStore, [], [], SyncSlice> = (set, 
     });
     get().saveData();
     await deleteSyncMasterKey();
+  },
+
+  // ─── P1-3:冲突解决 UI ──────────────────────────────────────────────────
+
+  pushConflict: (conflict) => {
+    const newConflict: PendingConflict = {
+      ...conflict,
+      id: generateId(),
+      occurredAt: Date.now(),
+      resolution: null,
+      applied: false,
+    };
+    set((state) => {
+      // 同一 recordId 的未决冲突(resolution === null)只保留最新一条,避免堆积。
+      // 已解决但尚未清理(applied=false, resolution='local' 正在回滚中)的保留,
+      // 由 markConflictApplied/clearResolvedConflicts 后续清理。
+      const filtered = state.pendingConflicts.filter(
+        (c) => !(c.recordId === conflict.recordId && c.resolution === null),
+      );
+      return { pendingConflicts: [...filtered, newConflict] };
+    });
+  },
+
+  setConflictResolution: (conflictId, resolution) => {
+    set((state) => ({
+      pendingConflicts: state.pendingConflicts.map((c) =>
+        c.id === conflictId
+          ? // 'remote' 无需回滚,直接标记 applied=true,useSyncScheduler 跳过该条。
+            // 'local' 保持 applied=false,等 useSyncScheduler 回滚 localRecord 后再 markApplied。
+            { ...c, resolution, applied: resolution === 'remote' ? true : c.applied }
+          : c,
+      ),
+    }));
+  },
+
+  markConflictApplied: (conflictId) => {
+    set((state) => ({
+      pendingConflicts: state.pendingConflicts.map((c) =>
+        c.id === conflictId ? { ...c, applied: true } : c,
+      ),
+    }));
+  },
+
+  clearResolvedConflicts: () => {
+    set((state) => ({
+      pendingConflicts: state.pendingConflicts.filter((c) => !c.applied),
+    }));
   },
 });

@@ -18,8 +18,24 @@ class Task(Base):
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    due_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     start_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    start_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     reminder_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # GTD 维度:能量等级与上下文,用于"低能量时段挑低能量任务"等场景。
+    # 与前端 desktop/src/shared/types.ts EnergyLevel / TaskContext 对齐。
+    energy_level: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    context: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+
+    # 重复任务规则(RecurrenceRule JSON 文本)与设备版本向量(E2EE 同步因果偏序)。
+    # 前者用于 buildNextRecurrenceTask,后者用于 P2P 同步协议。
+    recurrence: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="null")
+    device_version: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+
+    # 任务地点(JSON 文本,Location 接口)。前端有此字段,后端原本缺失导致同步丢失。
+    location: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="null")
 
     priority: Mapped[str] = mapped_column(String(20), default="medium")
     status: Mapped[str] = mapped_column(String(30), default="todo")

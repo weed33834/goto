@@ -68,6 +68,13 @@ export interface UseSyncRuntimeResult {
 
   /** 重置 E2EE 同步：清空 pairedDevices + 删除 SMK + 切回 http-rest。 */
   resetAll: () => Promise<void>;
+
+  /** UI 友好别名（SyncSettingsPanel 等组件用）：等价于 startResponderPairing。 */
+  addDevice: () => Promise<void>;
+  /** UI 友好别名：等价于 startInitiatorPairing。 */
+  joinDevice: (code: string) => Promise<void>;
+  /** UI 友好别名：等价于 resetAll。 */
+  resetSync: () => Promise<void>;
 }
 
 /**
@@ -512,5 +519,10 @@ export function useSyncRuntime(): UseSyncRuntimeResult {
     cancelPairing,
     removeDevice,
     resetAll,
+    // UI 友好别名：SyncSettingsPanel 等组件用 addDevice/joinDevice/resetSync 命名。
+    // 真实实现仍是上面的 startResponderPairing / startInitiatorPairing / resetAll。
+    addDevice: startResponderPairing,
+    joinDevice: startInitiatorPairing,
+    resetSync: resetAll,
   };
 }

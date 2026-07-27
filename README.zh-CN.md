@@ -11,15 +11,14 @@
 你的待办清单不必交给别人保管。
 
 [![License: CNCL-1.0](https://img.shields.io/badge/License-CNCL--1.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-611%20passing-brightgreen.svg)](#质量门槛)
-[![Web unit](https://img.shields.io/badge/web%20unit-494%20%E2%9C%93-brightgreen.svg)](#质量门槛)
+[![Tests](https://img.shields.io/badge/tests-771%20passing-brightgreen.svg)](#质量门槛)
+[![Web unit](https://img.shields.io/badge/web%20unit-550%20%E2%9C%93-brightgreen.svg)](#质量门槛)
 [![Web e2e](https://img.shields.io/badge/web%20e2e-108%20%E2%9C%93-brightgreen.svg)](#质量门槛)
 [![Bundle](https://img.shields.io/badge/首屏%20JS-103KB%20gzip-success.svg)](#质量门槛)
 [![Sync](https://img.shields.io/badge/sync-5000%20rec%20%7C%20649ms-blue.svg)](#端到端加密同步)
 [![E2EE](https://img.shields.io/badge/E2EE-AES--256--GCM%20%2B%20Ed25519-purple.svg)](SECURITY.md)
 [![Platform](https://img.shields.io/badge/platform-Web%20%E2%9C%93%20%7C%20self--hosted%20relay-orange.svg)](#跑起来)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](https://gitcode.com/badhope/goto/issues)
-[![Audit](https://img.shields.io/badge/审计-2%20轮%20%7C%2036%20项发现-red.svg)](docs/security/SECURITY_TRACKER.md)
 
 [English](README.md) · **中文**
 
@@ -73,23 +72,23 @@ Goto 走第三条路——**数据默认在你的设备上，跨设备同步时�
 ```mermaid
 flowchart LR
   subgraph DeviceA["设备 A — Web 应用"]
-    A_UI["React UI<br/>(8 页 + 时间织锦)"]
+    A_UI["React UI<br/>(12 页 + 时间织锦)"]
     A_IDB[("IndexedDB<br/>(本地优先)")]
-    A_ENC["Web Crypto<br/>PBKDF2 600k + AES-256-GCM"]
+    A_ENC["Web Crypto<br/>argon2id + AES-256-GCM"]
     A_UI <--> A_IDB
     A_UI <--> A_ENC
   end
 
   subgraph DeviceB["设备 B — Web 应用"]
-    B_UI["React UI<br/>(8 页 + 时间织锦)"]
+    B_UI["React UI<br/>(12 页 + 时间织锦)"]
     B_IDB[("IndexedDB<br/>(本地优先)")]
-    B_ENC["Web Crypto<br/>PBKDF2 600k + AES-256-GCM"]
+    B_ENC["Web Crypto<br/>argon2id + AES-256-GCM"]
     B_UI <--> B_IDB
     B_UI <--> B_ENC
   end
 
   Relay["Relay<br/>(自托管)<br/>只看密文<br/>7 天离线队列"]
-  Backend["后端<br/>(可选)<br/>FastAPI · 22 个端点"]
+  Backend["后端<br/>(可选)<br/>FastAPI · 36 个端点"]
 
   A_ENC -- "密文帧<br/>iv‖tag‖ct" --> Relay
   Relay --> B_ENC
@@ -106,9 +105,9 @@ flowchart LR
 
 | 组件 | 技术栈 | 干什么 |
 | --- | --- | --- |
-| **Web 应用**（`desktop/`） | Vite · React 18 · Zustand 4 · TypeScript 5 | 本地优先的浏览器任务管理。持久化到 IndexedDB,用 Web Crypto(PBKDF2)加密保险库;JSON 备份用 PBKDF2-SHA256 600k + AES-256-GCM 加密。**12 个页面 + 时间织锦视图**(Today / Calendar / Projects / 项目详情 / Categories / Tags / Search / Vault / Settings / 看板 / 统计仪表盘 / 每周回顾)、提醒、重复任务、子任务、NLP 快速添加、批量操作、拖拽排序、vim 快捷键、可安装 PWA、6 分区设置页(安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区)。 |
+| **Web 应用**（`desktop/`） | Vite · React 18 · Zustand 4 · TypeScript 5 | 本地优先的浏览器任务管理。持久化到 IndexedDB,用 Web Crypto(argon2id)加密保险库;JSON 备份用 argon2id (m=64MB t=3 p=4) + AES-256-GCM 加密(旧 PBKDF2 备份只读兼容)。**12 个页面 + 时间织锦视图**(Today / Calendar / Projects / 项目详情 / Categories / Tags / Search / Vault / Settings / 看板 / 统计仪表盘 / 每周回顾)、提醒、重复任务、子任务、NLP 快速添加、批量操作、拖拽排序、vim 快捷键、可安装 PWA、6 分区设置页(安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区)。 |
 | **中继 Relay** | Node.js 18+（≥20）· WebSocket · express-rate-limit · Docker | 只转发密文帧，带离线队列（7 天 TTL）。LAN 优先，relay 兜底。 |
-| **后端** | Python 3.11+ · FastAPI · PyGit2 | 可选组件:任务 / 项目 / 分类 / 标签 API、Git 管理、插件系统。与同步链路解耦。**22 个 REST 端点**。 |
+| **后端** | Python 3.11+ · FastAPI · PyGit2 | 可选组件:任务 / 项目 / 分类 / 标签 API、Git 管理、插件系统。与同步链路解耦。**36 个 REST 端点**。 |
 
 Web 应用通过 relay 建立加密 P2P 会话跨设备同步；relay 只是个搬运工，全程不解密。
 
@@ -119,8 +118,7 @@ Search、Vault、Settings、**看板**、**统计仪表盘**、**每周回顾**�
 
 > 早期文档提到过的 Gantt / Timeline / TimeBlock / Table / MindMap 视图
 > 与 Templates / Automation / Notes / Analytics / Goals / Habits 页面**当前未实现**,
-> 转向计划见 [docs/GOTO_PIVOT_PLAN.md](docs/GOTO_PIVOT_PLAN.md) 与
-> [docs/PRODUCT_EVOLUTION_PLAN_v1.md](docs/PRODUCT_EVOLUTION_PLAN_v1.md)。
+> 路线图见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 任务依赖（`blockedBy` / `blocks`）会拦着你：被依赖的任务没完成前，不让你点完成。
 
@@ -128,7 +126,7 @@ Search、Vault、Settings、**看板**、**统计仪表盘**、**每周回顾**�
 
 设置页分为 **安全 / 外观 / 快捷键 / 数据 / 同步 / 危险区** 六个分区:
 
-- **安全**:解锁方式(主密码;仅当平台暴露生物识别时显示)、自动锁定时长
+- **安全**:解锁方式(仅主密码,不使用生物识别 —— Web 平台尚无可用 WebAuthn 落地)、自动锁定时长
   (关闭 / 1 / 5 / 15 / 30 / 60 分钟,从原固定 5 分钟开关升级)、截图/录屏保护
   (仅在桌面壳内生效,Web 端标注为 best-effort)、**修改主密码**(验证旧密码 →
   生成新 verifier → 清空密钥缓存;此前生成的加密备份仍需用旧密码恢复)、
@@ -138,7 +136,7 @@ Search、Vault、Settings、**看板**、**统计仪表盘**、**每周回顾**�
 - **快捷键**:任意位置按 `?` 弹出快捷键浮层,列出所有已注册快捷键
   (`?` / `Mod+L` / `Mod+B` / `Mod+K` / `/` / `Mod+N` / `Esc`);设置页也有
   "查看所有快捷键"按钮入口。
-- **数据**:加密备份导出/导入(PBKDF2-SHA256 600k + AES-256-GCM)、明文 JSON
+- **数据**:加密备份导出/导入(argon2id + AES-256-GCM)、明文 JSON
   导出/导入(保险库不进 JSON,避免凭据泄露)。
 - **同步**:relay 地址、设备身份、配对(host / join)、已配对设备列表、吊销。
 - **危险区**(红框,二次确认):**清空所有数据**(任务 / 保险库 / 项目 / 分类 /
@@ -169,9 +167,6 @@ join 端，到端后做恒定时间比对——不一致就拒绝配对，而不
 每次同步都解密失败」的烂状态。设备吊销是四步编排：终止运行时会话 → 删除
 设备记录 → 清理它的离线发件箱 → 仅当没有其他已配对设备时才重置 SMK。
 
-实现层面有若干处和设计规格不一致的地方（以及为什么），都回写到了
-[docs/superpowers/specs/](docs/superpowers/specs/)。
-
 ## 功能一览
 
 | 领域 | 你能得到什么 |
@@ -179,8 +174,8 @@ join 端，到端后做恒定时间比对——不一致就拒绝配对，而不
 | **本地优先** | 数据在 IndexedDB。无账号、无云、无遥测。 |
 | **E2EE 同步** | AES-256-GCM 在同步主密钥下;relay 只看密文。 |
 | **保险库** | 字段级 AES-256-GCM 加密敏感条目,自带密码生成器。 |
-| **备份** | 加密 JSON 导出:PBKDF2-SHA256 600k + AES-256-GCM。明文导出不含保险库。 |
-| **主密码** | 仅存 PBKDF2 verifier,密码永不落盘。可在设置页修改。 |
+| **备份** | 加密 JSON 导出:argon2id + AES-256-GCM。明文导出不含保险库。 |
+| **主密码** | 仅存 argon2id verifier,密码永不落盘。可在设置页修改。 |
 | **暴力破解冷却** | 连续 3 次错误密码 → 锁 30 秒。 |
 | **自动锁定** | 关闭 / 1 / 5(默认) / 15 / 30 / 60 分钟,或失焦即锁。 |
 | **隐私外壳** | 锁屏、隐私模式(隐藏保险库)、剪贴板自动清除(默认 30 秒,可配)。 |
@@ -191,7 +186,7 @@ join 端，到端后做恒定时间比对——不一致就拒绝配对，而不
 | **自动标签** | 关键词插件(购物 / 工作 / 健康 / 学习)。 |
 | **任务依赖** | `blockedBy` / `blocks` 阻止在被依赖任务未完成前点完成。 |
 | **插件系统** | 注册表 + 内置插件。后端可扩展自定义插件。 |
-| **测试** | 共 611 项:494 unit + 108 e2e + 104 后端 + 9 relay。 |
+| **测试** | 共 771 项:550 unit + 26 skipped + 108 e2e + 104 后端 + 9 relay。 |
 
 ## 跑起来
 
@@ -208,9 +203,6 @@ npm run dev       # Vite 开发服务器，打开 http://localhost:5173
 ```bash
 npm run build     # 输出 dist/renderer/（静态 SPA），直接托管该目录
 ```
-
-完整的用户手册（主密码、保险库、同步、备份）见
-[docs/desktop-user-guide.md](docs/desktop-user-guide.md)。
 
 ### Relay（自托管）
 
@@ -243,12 +235,12 @@ desktop/                 # 纯浏览器 Web 应用（Vite + React 18 + Zustand 4
     api/                 # 后端 REST 客户端（tasks/projects/categories/tags）
     store/               # Zustand store，状态在 slices/
     sync/                # E2EE 同步栈（Web Crypto，对接 relay）
-    utils/               # 安全存储（IndexedDB + Web Crypto / PBKDF2）
+    utils/               # 安全存储（IndexedDB + Web Crypto / argon2id）
   src/renderer/lib/      # webAPI：本地 IndexedDB 实现
                          # （本地优先数据访问，无原生桥接）
 relay/                   # 可自托管的 WebSocket 中继 + Docker
 backend/                 # 可选的 FastAPI 服务
-docs/                    # 用户手册、路线图、安全跟踪、relay 部署
+docs/                    # 路线图、relay 部署、开发者指南
 ```
 
 Web 应用保留了两条数据路径：`shared/api/*` 走后端 REST，而 `lib/webAPI.ts`
@@ -267,34 +259,23 @@ cd backend && python -m ruff check app && python -m mypy app && python -m pytest
 cd relay && npx tsc --noEmit && npm test
 ```
 
-三项我都要求「0 错误」。测试基线是 **611 项**(Web 应用 unit 494 + 26 skipped |
+三项我都要求「0 错误」。测试基线是 **771 项**(Web 应用 unit 550 + 26 skipped |
 Web 应用 e2e 108 | 后端 104 | relay 9),`main` 分支全绿。5000 条端到端同步基准是
 649 ms(7699 rec/s)——这个数字以前是 52 秒,修掉 REQUEST 分块 bug 加事务化批量
 落库之后才下来的。
 
 ## 安全
 
-两轮独立审计（TF-001~019 与 TF2-001~017，共 36 项发现）统一跟踪在
-[SECURITY_TRACKER.md](docs/security/SECURITY_TRACKER.md) 里。大部分已修复，
-剩下的在路线图里标记。当前在用的安全机制：分支保护 + 必须评审、CodeQL、
-gitleaks（带 push 保护）、依赖审查（拒绝 GPL-3.0/AGPL-3.0）、OSSF Scorecard、
-cosign 签名发布、Hypothesis 属性测试。漏洞报告走私有披露流程——见
+当前在用的安全机制:CORS 白名单、Bearer token 鉴权、日志脱敏、路径校验、
+DNS 重绑定防御、argon2id verifier。漏洞报告走私有披露流程——见
 [SECURITY.md](SECURITY.md)。
 
 ## 部署
 
-仓库自带这些 GitHub Actions：
+仓库自带 `ci.yml` —— Web 应用 lint/typecheck/test/build + e2e + 后端
+ruff/mypy/pytest + relay vitest,每次 push 与 PR 都跑。
 
-- `ci.yml` — Web 应用 lint/test/build + 后端 ruff/mypy/test/fuzz
-- `verify.yml` — 每次 push 跑 typecheck
-- `relay-ci.yml` — relay typecheck/build/test
-- `web-deploy.yml` — 构建 `desktop/dist/renderer` 并发布到 GitHub Pages
-- `pages-intro.yml` — 把 `docs/` 下的静态介绍页发布到 GitHub Pages
-- `gitleaks.yml` — secret 扫描
-- `release.yml` — cosign keyless 签名发布 + SHA256SUMS
-
-GitHub Pages 默认只放介绍页，除非触发 `web-deploy.yml`；Web 应用本身是静态 SPA，
-可托管到任意静态主机。
+GitHub Pages 默认只放介绍页;Web 应用本身是静态 SPA,可托管到任意静态主机。
 
 ## 文档导航
 
@@ -302,8 +283,7 @@ GitHub Pages 默认只放介绍页，除非触发 `web-deploy.yml`；Web 应用�
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、状态模型、同步协议栈 |
 | [QUICK_START.md](QUICK_START.md) | 三种跑起来的方式 |
-| [docs/desktop-user-guide.md](docs/desktop-user-guide.md) | Web 应用手册：安装、保险库、同步、备份 |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | 已完成（Phase 1–8）与待办 |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | 已完成与待办 |
 | [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | 开发流程、命令、同步策略 |
 | [docs/relay-deployment.md](docs/relay-deployment.md) | 自托管 relay、TLS、Nginx |
 | [docs/fuzzing.md](docs/fuzzing.md) | Hypothesis 属性测试 |
@@ -334,7 +314,7 @@ GitHub Pages 默认只放介绍页，除非触发 `web-deploy.yml`；Web 应用�
 
 ## FAQ —— 大家实际问的
 
-- **能找回忘记的主密码吗?** 不能。密码永不落盘 —— 只存 PBKDF2 verifier。把它记在安全的地方,或者依赖加密备份。
+- **能找回忘记的主密码吗?** 不能。密码永不落盘 —— 只存 argon2id verifier。把它记在安全的地方,或者依赖加密备份。
 - **relay 能看到什么?** 密文帧 + 你的设备 ID。它无法解密任何内容。
 - **所有设备都丢了怎么办?** 在新设备上恢复加密备份(仍需旧密码)。没有备份或未配对设备,数据找不回来 —— 这是 E2EE 的代价。
 - **能不用 relay 直接同步吗?** 不能 —— 配对握手必须经 relay 转发。配对完成后,LAN 内可达时优先直连。
@@ -346,9 +326,9 @@ GitHub Pages 默认只放介绍页，除非触发 `web-deploy.yml`；Web 应用�
 
 完整路线图见 [docs/ROADMAP.md](docs/ROADMAP.md)。摘要:
 
-- ✅ Phase A —— 本地优先 Web 应用(8 页 + 时间织锦)、E2EE 同步、保险库、加密备份、6 分区设置页、611 项测试全绿。
-- 🚧 Phase B —— 多设备同步加固、插件市场、时间织锦交互。
-- 🔮 Phase C —— 跨平台原生壳、可选 LLM 辅助标签(本地模型)。
+- ✅ 本地优先 Web 应用(12 页 + 时间织锦)、E2EE 同步、保险库、加密备份、6 分区设置页、771 项测试全绿。
+- 🚧 多设备同步加固、插件市场、时间织锦交互。
+- 🔮 可选 LLM 辅助标签(本地模型)。
 
 ## License
 

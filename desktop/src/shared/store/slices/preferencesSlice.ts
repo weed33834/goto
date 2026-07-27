@@ -6,6 +6,7 @@ import type {
   NotificationPreferences,
   DisplaySettings,
   PrivacySettings,
+  PomodoroSettings,
 } from '../../types';
 
 export interface PreferencesSlice {
@@ -14,6 +15,7 @@ export interface PreferencesSlice {
   updateNotificationSettings: (settings: Partial<NotificationPreferences>) => void;
   updateDisplaySettings: (settings: Partial<DisplaySettings>) => void;
   updatePrivacySettings: (settings: Partial<PrivacySettings>) => void;
+  updatePomodoroSettings: (settings: Partial<PomodoroSettings>) => void;
 }
 
 export const createPreferencesSlice: StateCreator<AppStore, [], [], PreferencesSlice> = (set, get) => ({
@@ -101,7 +103,6 @@ export const createPreferencesSlice: StateCreator<AppStore, [], [], PreferencesS
       allowInvites: true,
       dataCollection: true,
       analytics: true,
-      biometricLock: false,
       autoLockTimeout: 5,
     },
     languageSettings: {
@@ -169,6 +170,16 @@ export const createPreferencesSlice: StateCreator<AppStore, [], [], PreferencesS
       userPreferences: {
         ...state.userPreferences,
         privacySettings: { ...state.userPreferences.privacySettings, ...privacySettings },
+      },
+    }));
+    get().saveData();
+  },
+
+  updatePomodoroSettings: (pomodoroSettings) => {
+    set((state) => ({
+      userPreferences: {
+        ...state.userPreferences,
+        pomodoroSettings: { ...state.userPreferences.pomodoroSettings, ...pomodoroSettings },
       },
     }));
     get().saveData();

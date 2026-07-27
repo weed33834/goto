@@ -1,7 +1,7 @@
-// 移动端同步存储 —— SyncRecord 管理 + SMK 持久化 + SyncStore 抽象。
-// 桌面端基于 SQLite，移动端用「内存 Map + secureStorage」：SyncRecord 内存索引，
-// SMK 存 Keychain/Keystore，配对设备由 syncSlice.pairedDevices 管理。
-// SyncStore 接口异步（Web Crypto 加密）；encryptedPayload 为 Bytes，线上转 base64。
+// 同步存储 —— SyncRecord 管理 + SMK 持久化 + SyncStore 抽象。
+// Web 端用「内存 Map + secureStorage」:SyncRecord 内存索引,
+// SMK 存 secureStorage,配对设备由 syncSlice.pairedDevices 管理。
+// SyncStore 接口异步(Web Crypto 加密);encryptedPayload 为 Bytes,线上转 base64。
 
 import { decryptSyncRecord } from './syncCrypto';
 import { bytesToBase64, base64ToBytes, utf8Encode } from './bytes';
@@ -197,7 +197,7 @@ interface SerializedSyncState {
   lastSyncAt: number | null;
 }
 
-const DEFAULT_PERSISTENT_STORAGE_KEY = 'taskflow_sync_records';
+const DEFAULT_PERSISTENT_STORAGE_KEY = 'goto_sync_records';
 
 /**
  * 基于 AsyncStorage 的持久化 SyncStore。encryptedPayload 是 SMK 密文，可安全落盘。

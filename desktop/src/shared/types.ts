@@ -317,6 +317,24 @@ export interface Tag {
   createdBy?: string | null;
 }
 
+/**
+ * 智能列表 —— 用户保存的 Filter DSL 查询。
+ *
+ * 与 View 的区别:View 是基于 Filter[] 的旧过滤系统(每条 = 字段+操作符+值),
+ * SmartList 直接存 DSL 字符串(如 `today & p1 & @work`),表达力更强,
+ * 但语义由 filterDsl.ts 单独解析。两者并存,不互相替换。
+ */
+export interface SmartList {
+  id: string;
+  name: string;
+  /** DSL 查询字符串,由 filterDsl.parseFilterDsl 解析。 */
+  query: string;
+  /** UI 排序,小的在前。 */
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ===== 视图系统 =====
 
 export interface View {
@@ -485,7 +503,6 @@ export interface PrivacySettings {
   allowInvites: boolean;
   dataCollection: boolean;
   analytics: boolean;
-  biometricLock: boolean;
   autoLockTimeout: number;
 }
 
@@ -798,12 +815,18 @@ export interface SyncConfig {
 /** 保险库条目:Web 端独立于移动端的密码/卡片/安全笔记存储 */
 export interface VaultItem {
   id: string;
-  type: 'password' | 'card' | 'secureNote';
+  type: 'password' | 'card' | 'secureNote' | 'timeCapsule';
   title: string;
   fields: VaultField[];
   isHidden: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * 时间胶囊元数据:仅当 type === 'timeCapsule' 时存在。
+   * unlockAt 之前消息内容被遮蔽,到达后允许查看明文。
+   * 与 VaultItem 一起走 vault_items 表,自动继承 E2EE 同步与本地加密存储。
+   */
+  timeCapsule?: TimeCapsuleMeta;
 }
 
 export interface VaultField {
@@ -813,9 +836,136 @@ export interface VaultField {
   isSensitive: boolean;
 }
 
-/** Web 端安全设置(与移动端 PrivacySettings 不同,Web 端更简单) */
+/**
+ * 时间胶囊元数据。
+ * - unlockAt: ISO 字符串,到达此时间后才允许查看 fields 中加密的消息内容。
+ * - deliveryPolicy: 到期后是否自动弹出通知(预留扩展位,当前仅做本地视图)。
+ */
+export interface TimeCapsuleMeta {
+  unlockAt: string;
+  deliveryPolicy?: 'silent' | 'notify';
+}
+
+/**
+ * 习惯追踪实体(s3)。
+ *
+ * 设计要点:
+ * - completedDates 用 'YYYY-MM-DD' 字符串数组,而非时间戳,避免时区漂移导致
+ *   "在 UTC 边界附近打卡,第二天看热力图却显示在昨天"。
+ * - cadence 限定 daily/weekly;weekly 表示一周内打卡任意一天即算完成。
+ * - archived=true 表示用户归档(不再展示但保留历史),不是删除。
+ * - 不走 E2EE 同步:习惯是设备本地的个人行为数据,与任务/保险库不同。
+ *   后续若需要"在多端共享习惯",再扩展 sync tables。
+ */
+export interface Habit {
+  id: string;
+  name: string;
+  description?: string;
+  cadence: 'daily' | 'weekly';
+  /** 显示色(用于热力图与卡片标识)。HEX 字符串。 */
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  archived: boolean;
+  /** 已完成日期数组,元素为 'YYYY-MM-DD'(本地时区)。 */
+  completedDates: string[];
+}
+
+/**
+ * 任务模板(D3)。保存"经常创建的同类任务"的字段默认值,
+ * applyTemplate 时以此为蓝本调 addTask,免重复填表。
+ *
+ * 设计要点:
+ * - taskDefaults 只存可复用字段(title/priority/tags/estimatedTime 等),
+ *   不存 id/createdAt/updatedAt/reminderDate 这类每次实例化都不同的字段。
+ * - variables 预留变量替换位(如 {{date}}),当前版本只做字符串替换,
+ *     后续可扩展为表单式询问。
+ * - usageCount / lastUsedAt 排序用:常用模板排前面。
+ * - 不走 E2EE 同步:模板是设备本地的个人偏好,跨设备意义不大。
+ */
+export interface Template {
+  id: string;
+  name: string;
+  /** 模板描述(可选),用于在列表中提示用途。 */
+  description?: string;
+  /** 任务字段默认值,applyTemplate 时 spread 到 addTask 输入。 */
+  taskDefaults: TemplateTaskDefaults;
+  /** 变量占位符列表(如 ['date', 'assignee']),当前版本仅做标题/描述替换。 */
+  variables: string[];
+  /** 使用次数,排序用。 */
+  usageCount: number;
+  /** 最后使用时间(ISO 字符串),排序用。 */
+  lastUsedAt: string | null;
+  /** 是否内置(系统模板,不可删除)。 */
+  isBuiltIn: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 模板的任务字段默认值。只摘取对模板有意义的字段,
+ * 其余字段(addTask 内会自动补默认值)不在模板里重复。
+ */
+export interface TemplateTaskDefaults {
+  title: string;
+  description?: string;
+  content?: string;
+  priority?: Priority;
+  tags?: string[];
+  projectId?: string | null;
+  categoryId?: string | null;
+  estimatedTime?: number | null;
+  /** 是否重复任务 + 规则。 */
+  isRecurring?: boolean;
+  recurrence?: RecurrenceRule | null;
+  /** 子任务模板:每项 { title },apply 时新建 subtask。 */
+  subtasks?: Array<{ title: string }>;
+}
+
+/**
+ * OKR 目标(D4)。一个 Goal 对应一个 Objective,下挂多个 KeyResult。
+ *
+ * 设计要点:
+ * - type=quantitative 量化 KR(如"读完 12 本书",target=12,unit=本,current 实时更新);
+ *   type=qualitative 定性 KR(无数值,靠人工标记 done/not-done)。
+ * - 进度由 KR 自动汇总(quantitative 按 current/target,qualitative 按完成数)。
+ * - status=active/completed/paused/archived,completed 时 archived 自动设 true。
+ * - 不走 E2EE 同步:目标是个人规划数据,本地优先即可。
+ */
+export interface Goal {
+  id: string;
+  title: string;
+  description?: string;
+  /** OKR 周期(如 '2026-Q3'),用于分组展示。 */
+  period: string;
+  status: 'active' | 'completed' | 'paused' | 'archived';
+  keyResults: KeyResult[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 关键结果(KR)。
+ * - quantitative:有 target/current,进度 = current/target
+ * - qualitative:无数值,done=true/false
+ */
+export interface KeyResult {
+  id: string;
+  title: string;
+  type: 'quantitative' | 'qualitative';
+  /** quantitative 专用:目标值。 */
+  target?: number;
+  /** quantitative 专用:当前值。 */
+  current?: number;
+  /** quantitative 专用:单位(如"本""次""小时")。 */
+  unit?: string;
+  /** qualitative 专用:是否完成。 */
+  done?: boolean;
+}
+
+/** Web 端安全设置 */
 export interface SecuritySettings {
-  lockMethod: 'password' | 'pin' | 'biometric';
+  lockMethod: 'password';
   autoLockMinutes: number;
   clipboardClearSeconds: number;
   screenshotProtection: boolean;

@@ -1,5 +1,5 @@
 import { getStoredAuth } from '../utils/secureStorage';
-import { API_BASE_URL } from './config';
+import { getApiBaseUrl } from './config';
 
 export class ApiError extends Error {
   constructor(
@@ -10,6 +10,17 @@ export class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+/** 测试连接结果:供 SettingsPage 后端连接区显示状态反馈。 */
+export interface ConnectionTestResult {
+  ok: boolean;
+  /** HTTP 状态码,网络错误时为 0。 */
+  status: number;
+  /** 请求耗时(毫秒),便于用户感知后端响应速度。 */
+  latencyMs: number;
+  /** 失败原因(ok=false 时有值)。 */
+  error?: string;
 }
 
 async function parseError(response: Response): Promise<string> {
@@ -97,7 +108,59 @@ export async function del(url: string): Promise<void> {
 }
 
 export function isApiAvailable(): Promise<boolean> {
-  return fetch(`${API_BASE_URL}/health`, { method: 'GET' })
+  return fetch(`${getApiBaseUrl()}/health`, { method: 'GET' })
     .then((r) => r.ok)
     .catch(() => false);
+}
+
+/**
+ * 测试与指定后端的连接,返回结构化结果供 UI 反馈。
+ * 不依赖全局配置:接受 baseUrl + token 直接探测,避免影响当前会话的 API_BASE_URL。
+ *
+ * 探测策略:GET `${baseUrl}/health`,后端 FastAPI 默认暴露该端点。
+ *   - 2xx:ok=true
+ *   - 401/403:后端可达但 token 无效(仍报 ok=true,因为目标是验证"后端可达")
+ *   - 其他 4xx/5xx:ok=false,附带状态码
+ *   - 网络错误:ok=false, status=0, error 含错误信息
+ *
+ * @param baseUrl 后端 base URL,如 `https://api.goto.app` 或 `http://127.0.0.1:8000`
+ * @param token   可选 Bearer token。提供时附加 Authorization 头,用于验证 token 是否被后端接受。
+ */
+export async function testApiConnection(
+  baseUrl: string,
+  token?: string,
+): Promise<ConnectionTestResult> {
+  const start = Date.now();
+  const trimmedBase = baseUrl.replace(/\/+$/, '');
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const response = await fetch(`${trimmedBase}/health`, {
+      method: 'GET',
+      headers,
+      // 5 秒超时,避免 UI 长时间等待不可达的后端
+      signal: AbortSignal.timeout(5000),
+    });
+    const latencyMs = Date.now() - start;
+    // 401/403 表示后端可达但 token 无效 —— 后端本身是通的,只是认证失败
+    if (response.ok || response.status === 401 || response.status === 403) {
+      return { ok: true, status: response.status, latencyMs };
+    }
+    return {
+      ok: false,
+      status: response.status,
+      latencyMs,
+      error: `HTTP ${response.status} ${response.statusText}`.trim(),
+    };
+  } catch (err) {
+    const latencyMs = Date.now() - start;
+    const error =
+      err instanceof Error
+        ? err.name === 'TimeoutError' || err.name === 'AbortError'
+          ? '连接超时(5s)'
+          : err.message
+        : String(err);
+    return { ok: false, status: 0, latencyMs, error };
+  }
 }

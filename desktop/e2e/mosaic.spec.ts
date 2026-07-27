@@ -13,7 +13,7 @@
  * - 完成任务:在 /today 创建任务后勾选 checkbox
  */
 import { test, expect } from '@playwright/test';
-import { setupUnlockedApp, taskTitleInput } from './helpers';
+import { setupUnlockedApp, taskTitleInput, taskSubmitButton } from './helpers';
 
 test.describe('时间织锦 Mosaic', () => {
   test.beforeEach(async ({ page }) => {
@@ -52,15 +52,17 @@ test.describe('时间织锦 Mosaic', () => {
 
     const titleInput = taskTitleInput(page);
     await titleInput.fill('织锦测试任务');
-    await page.getByRole('button', { name: '添加' }).click();
+    await taskSubmitButton(page).click();
     await expect(page.getByText('织锦测试任务')).toBeVisible();
 
     // P1-4:TodayPage 默认 today 过滤,完成后 completed=true 被排除。
     // 切到"全部"过滤视图,确保完成任务仍在列表中可见,checkbox 才能正确 checked。
     await page.getByRole('tab', { name: '全部' }).click();
 
-    // 勾选任务卡片的 checkbox 标记为完成
-    const checkbox = page.locator('input[type="checkbox"]').first();
+    // 勾选"织锦测试任务"的 checkbox 标记为完成
+    // 用 aria-label 精确定位(TaskCard 的 checkbox aria-label="标记任务 {title} 完成"),
+    // 避免 .first() 误勾到列表中其他任务的 checkbox 导致 line-through 断言失败。
+    const checkbox = page.getByRole('checkbox', { name: '标记任务 织锦测试任务 完成' });
     await checkbox.check();
     // 等待状态更新:标题应被划线(completed 样式)
     await expect(page.getByText('织锦测试任务')).toHaveClass(/line-through/);

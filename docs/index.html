@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TaskFlow — 本地优先的加密任务工作流</title>
-<meta name="description" content="TaskFlow：本地优先、端到端加密的浏览器任务工作流。Web 应用 + 自托管中继,数据始终在你手里。" />
+<title>Goto — 本地优先的加密任务工作流</title>
+<meta name="description" content="Goto：本地优先、端到端加密的浏览器任务工作流。Web 应用 + 自托管中继,数据始终在你手里。" />
 <style>
   :root {
     --paper: #f7f4ed;
@@ -336,17 +336,17 @@
 
 <header class="masthead">
   <div class="wrap">
-    <p class="kicker">Field Notes · v1.2.0 · 2026-07</p>
-    <h1>TaskFlow</h1>
+    <p class="kicker">Field Notes · v0.2.0 · 2026-07</p>
+    <h1>Goto</h1>
     <p class="lede">
-      一个本地优先、端到端加密、跨平台的任务工作流。你的待办不必交给别人保管——
+      一个本地优先、端到端加密的任务工作流。你的待办不必交给别人保管——
       数据在你的设备上，同步在你信任的设备间进行。
     </p>
     <div class="meta-bar">
-      <span><b>v0.0.1</b></span>
-      <span>测试 <b>611</b> 项全绿</span>
+      <span><b>v0.2.0</b></span>
+      <span>测试 <b>771</b> 项全绿</span>
       <span>Web 应用 + 自托管中继</span>
-      <span>两轮安全审计</span>
+      <span>端到端加密</span>
     </div>
   </div>
 </header>
@@ -358,13 +358,13 @@
   <p>
     市面上的任务管理工具大致分两类：一类是纯本地待办，单机好用但换设备就抓瞎；
     一类是云同步，方便却把你的每一项计划、习惯、笔记都放进别人服务器。
-    TaskFlow 选第三条路——<strong>数据默认在本地，跨设备同步时端到端加密</strong>，
+    Goto 选第三条路——<strong>数据默认在本地，跨设备同步时端到端加密</strong>，
     中继服务只搬运密文，看不到任何内容。
   </p>
   <p>
     这不是因为我们做不出云同步，而是任务管理这件事没必要把你的生活细节
     交给第三方保管。代价是多花了不少功夫在加密协议和冲突解决上，换来的是：
-    没有 TaskFlow 账号这回事，也没有人能从服务器读出你的待办。
+    没有 Goto 账号这回事，也没有人能从服务器读出你的待办。
   </p>
   <p class="quiet">
     当前形态:浏览器 Web 应用(Vite + React 18)、可选的 Python 后端、可自托管的 Node 中继。
@@ -377,7 +377,7 @@
   <div class="arch">
     <div class="node">
       <div class="nh">Web 应用 <span class="tag">Vite · React 18 · Zustand 4</span></div>
-      <div class="nd">8 个页面 + 时间织锦视图。IndexedDB 本地存储 + Web Crypto 字段级 AES-256-GCM。隐私外壳 + 修改主密码 + 危险区数据销毁。</div>
+      <div class="nd">12 个页面 + 时间织锦视图。IndexedDB 本地存储 + Web Crypto 字段级 AES-256-GCM。隐私外壳 + 修改主密码 + 危险区数据销毁。</div>
     </div>
     <div class="node relay">
       <div class="nh">中继 Relay <span class="tag">Node.js · WebSocket · 自托管</span></div>
@@ -412,7 +412,7 @@
     </div>
     <div class="layer">
       <div class="lh">派生层</div>
-      <div class="lb">HKDF-SHA256 从 ECDH 共享密钥派生 <code>sendKey / receiveKey</code>，info 按角色方向绑定：<code>taskflow-sync-v1|initiator→responder</code>。</div>
+      <div class="lb">HKDF-SHA256 从 ECDH 共享密钥派生 <code>sendKey / receiveKey</code>，info 按角色方向绑定：<code>goto-sync-v2|initiator→responder</code>。</div>
     </div>
     <div class="layer">
       <div class="lh">记录层</div>
@@ -430,16 +430,16 @@
 
   <p>
     Web 应用统一用 Web Crypto API,线格式 AES-GCM 的 authTag 位置做了显式对齐,
-    <strong>跨设备字节级互操作已用 611 项测试中的双向用例验证</strong>——一台设备加密的帧
+    <strong>跨设备字节级互操作已用 771 项测试中的双向用例验证</strong>——一台设备加密的帧
     另一台能解,反之亦然。
-    <br><small>(截至 2026-07-20,测试总数 611 项:Web unit 494 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9,覆盖同步协议、备份加密、冲突解决、配对握手等。)</small>
+    <br><small>(截至 2026-07-26,测试总数 771 项:Web unit 550 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9,覆盖同步协议、备份加密、冲突解决、配对握手等。)</small>
   </p>
 </section>
 
 <section>
   <h2><span class="num">04</span>隐私不是开关,是默认</h2>
   <ul>
-    <li><strong>本地优先存储</strong>:Web 应用数据落 IndexedDB,密钥经 PBKDF2-SHA256 600k 迭代派生,主密码不存盘,仅以 verifier 形式保存。</li>
+    <li><strong>本地优先存储</strong>:Web 应用数据落 IndexedDB,密钥经 argon2id (m=64MB, t=3, p=4) 派生,主密码不存盘,仅以 verifier 形式保存。</li>
     <li><strong>字段级加密</strong>:保险库敏感字段叠加 AES-256-GCM,带密码生成器。</li>
     <li><strong>密码错误 cooldown</strong>:连续 3 次错误密码后强制 30 秒锁定,防暴力枚举。</li>
     <li><strong>修改主密码</strong>:设置页可在线修改主密码,验证旧密码 → 写新 verifier → 清空密钥缓存。</li>
@@ -449,8 +449,7 @@
     <li><strong>危险区数据销毁</strong>:清空数据(保留主密码与备份) / 恢复出厂设置(删主密码,重启到首次安装状态),二次确认,不可撤销。</li>
   </ul>
   <p class="quiet">
-    两轮独立安全审计（TF-001~019、TF2-001~017）覆盖 CORS、密钥熵、备份元数据、
-    LLM 脱敏、API token 注入等，大部分已修复，剩余项在路线图跟踪。
+    安全措施覆盖 CORS 白名单、日志脱敏、路径校验、DNS 重绑定防御、Bearer token 鉴权。
   </p>
 </section>
 
@@ -458,7 +457,7 @@
   <h2><span class="num">05</span>用数字说话</h2>
   <div class="stats">
     <div class="stat">
-      <div class="v">611</div>
+      <div class="v">771</div>
       <div class="l">测试 · 全绿</div>
     </div>
     <div class="stat">
@@ -478,19 +477,19 @@
       <div class="l">种同步消息类型</div>
     </div>
     <div class="stat">
-      <div class="v">8</div>
+      <div class="v">12</div>
       <div class="l">个页面 + 时间织锦</div>
     </div>
   </div>
   <p class="quiet">
     5000 条同步从 52 秒优化到 0.65 秒,靠的是修掉 REQUEST 分块 bug 加事务化批量落库。
-    测试覆盖:Web unit 494 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9。
+    测试覆盖:Web unit 550 + 26 skipped | Web e2e 108 | 后端 104 | Relay 9。
   </p>
 </section>
 
 <section>
   <h2><span class="num">06</span>能看到什么</h2>
-  <p>Web 应用提供 8 个页面 + 时间织锦视图,基于同一份数据,按场景切换:</p>
+  <p>Web 应用提供 12 个页面 + 时间织锦视图,基于同一份数据,按场景切换:</p>
   <ul>
     <li><strong>Today</strong> — 今日 / 逾期 / 即将到期 / 全部四个 tab,空态文案分类定制。</li>
     <li><strong>Calendar</strong> — 月历视图,任务按截止日期分布。</li>
@@ -509,11 +508,11 @@
     <thead><tr><th>组件</th><th>选型</th></tr></thead>
     <tbody>
       <tr><td>Web 应用</td><td>Vite 6 · React 18 · TypeScript 5 · Zustand 4 · Tailwind 3 · framer-motion · lucide-react</td></tr>
-      <tr><td>数据存储</td><td>IndexedDB · Web Crypto API · PBKDF2-SHA256 600k + AES-256-GCM</td></tr>
+      <tr><td>数据存储</td><td>IndexedDB · Web Crypto API · argon2id (m=64MB t=3 p=4) + AES-256-GCM</td></tr>
       <tr><td>后端(可选)</td><td>Python 3.11+ · FastAPI · PyGit2</td></tr>
       <tr><td>中继</td><td>Node.js 18+ · WebSocket · express-rate-limit · Docker 自托管</td></tr>
       <tr><td>测试</td><td>Vitest(Web unit / Relay)· Playwright(Web e2e)· pytest + Hypothesis(后端)</td></tr>
-      <tr><td>安全</td><td>CodeQL · Gitleaks · OSSF Scorecard · cosign 签名发布</td></tr>
+      <tr><td>安全</td><td>argon2id verifier · CORS 白名单 · Bearer token · 日志脱敏 · 路径校验 · DNS 重绑定防御</td></tr>
     </tbody>
   </table>
 </section>
@@ -539,8 +538,8 @@
 
 <footer>
   <div class="wrap">
-    <div class="sig">TaskFlow</div>
-    本地优先 · 端到端加密 · 跨平台<br />
+    <div class="sig">Goto</div>
+    本地优先 · 端到端加密<br />
     页面托管于 GitHub Pages，源码见仓库 <code>docs/index.html</code>。
   </div>
 </footer>

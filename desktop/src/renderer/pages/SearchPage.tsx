@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../../shared/store';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -7,7 +8,18 @@ import { EmptyState } from '../components/common/EmptyState';
 
 export function SearchPage() {
   const { tasks, searchHistory, addSearchToHistory, clearSearchHistory } = useAppStore();
-  const [query, setQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialQ = searchParams.get('q') ?? '';
+  const [query, setQuery] = useState(initialQ);
+
+  // 命令面板或其他入口通过 /search?q=xxx 跳转时,同步 query 状态。
+  // 仅依赖 searchParams:URL 变化时同步,本地输入不触发此 effect。
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null && q !== query) {
+      setQuery(q);
+    }
+  }, [searchParams, query]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

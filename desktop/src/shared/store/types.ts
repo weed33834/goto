@@ -10,6 +10,11 @@ import type { UISlice } from './slices/uiSlice';
 import type { PreferencesSlice } from './slices/preferencesSlice';
 import type { SyncSlice } from './slices/syncSlice';
 import type { SearchSlice } from './slices/searchSlice';
+import type { SmartListsSlice } from './slices/smartListsSlice';
+import type { HabitsSlice } from './slices/habitsSlice';
+import type { TemplatesSlice } from './slices/templatesSlice';
+import type { GoalsSlice } from './slices/goalsSlice';
+import type { PluginsSlice } from './slices/pluginsSlice';
 import type { PersistenceSlice } from './slices/persistenceSlice';
 
 // AppStore 通过 extends 所有 slice 接口组合而成
@@ -23,4 +28,9 @@ export interface AppStore extends
   PreferencesSlice,
   SyncSlice,
   SearchSlice,
+  SmartListsSlice,
+  HabitsSlice,
+  TemplatesSlice,
+  GoalsSlice,
+  PluginsSlice,
   PersistenceSlice {}

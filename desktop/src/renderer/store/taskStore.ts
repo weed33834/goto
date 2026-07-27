@@ -12,7 +12,7 @@ interface TaskState {
 }
 
 // 统一数据层:本 store 仅作为共享 store(useAppStore)的薄封装。
-// 通过订阅 useAppStore 使 tasks 始终与 loadData 读取的源(taskflow-async-storage)
+// 通过订阅 useAppStore 使 tasks 始终与 loadData 读取的源(goto-async-storage)
 // 保持一致。
 //
 // P0-3 修复:写操作改走 useAppStore.getState().addTask/updateTask/deleteTask,

@@ -16,7 +16,7 @@
  * - 历史只在 query 为空时显示
  */
 import { test, expect } from '@playwright/test';
-import { setupUnlockedApp, taskTitleInput, taskDescriptionInput } from './helpers';
+import { setupUnlockedApp, taskTitleInput, taskDescriptionInput, taskSubmitButton } from './helpers';
 
 test.describe('搜索', () => {
   test.beforeEach(async ({ page }) => {
@@ -30,12 +30,12 @@ test.describe('搜索', () => {
 
     await titleInput.fill('买菜');
     await descInput.fill('西红柿 2 斤');
-    await page.getByRole('button', { name: '添加' }).click();
+    await taskSubmitButton(page).click();
     await expect(titleInput).toHaveValue('');
 
     await titleInput.fill('写报告');
     await descInput.fill('季度总结');
-    await page.getByRole('button', { name: '添加' }).click();
+    await taskSubmitButton(page).click();
     await expect(titleInput).toHaveValue('');
 
     // 导航到搜索页

@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { RelayStore, MAX_FRAME_SIZE } from './store';
 import { ConnectionManager } from './connectionManager';
+import { logger } from './logger';
 
 const PING_INTERVAL_MS = Number(process.env.PING_INTERVAL_MS ?? 30_000);
 const MAX_TARGET_LENGTH = 128;
@@ -49,7 +50,7 @@ export function attachWsRelay(
     const now = Date.now();
 
     if (wss.clients.size >= MAX_CONNECTIONS) {
-      console.log(`[relay] Connection rejected: global connection limit reached (${MAX_CONNECTIONS})`);
+      logger.warn({ limit: MAX_CONNECTIONS }, 'connection rejected: global connection limit reached');
       ws.close(1013, 'server busy');
       return;
     }
@@ -59,7 +60,7 @@ export function attachWsRelay(
     const timestamps = ipConnectionTimestamps.get(clientIp) ?? [];
 
     if (currentCount >= MAX_CONNECTIONS_PER_IP) {
-      console.log(`[relay] Connection rejected from ${clientIp}: per-IP connection limit reached (${MAX_CONNECTIONS_PER_IP})`);
+      logger.warn({ clientIp, limit: MAX_CONNECTIONS_PER_IP }, 'connection rejected: per-IP connection limit reached');
       ws.close(1008, 'too many connections from your IP');
       return;
     }
@@ -67,7 +68,7 @@ export function attachWsRelay(
     const windowStart = now - IP_RATE_LIMIT_WINDOW_MS;
     const recentConnections = timestamps.filter(t => t > windowStart);
     if (recentConnections.length >= MAX_CONNECTIONS_PER_IP_WINDOW) {
-      console.log(`[relay] Connection rate limited from ${clientIp}: too many connection attempts`);
+      logger.warn({ clientIp }, 'connection rate limited: too many connection attempts');
       ws.close(1008, 'rate limited');
       return;
     }
@@ -86,7 +87,7 @@ export function attachWsRelay(
       (pairingCode !== null &&
         (pairingCode.length === 0 || pairingCode.length > MAX_PAIRING_CODE_LENGTH))
     ) {
-      console.log(`[relay] WebSocket auth failed: invalid target or pairingCode query parameter`);
+      logger.warn({ clientIp }, 'websocket auth failed: invalid target or pairingCode query parameter');
       ws.close(4001, 'invalid target or pairingCode');
       ipConnectionCounts.set(clientIp, (ipConnectionCounts.get(clientIp) ?? 1) - 1);
       return;
@@ -97,14 +98,14 @@ export function attachWsRelay(
     const queryToken = url.searchParams.get('token');
 
     if (!authMatch && !queryToken) {
-      console.log(`[relay] WebSocket auth failed: missing Authorization header or token query param`);
+      logger.warn({ clientIp }, 'websocket auth failed: missing Authorization header or token query param');
       ws.close(4001, 'missing authorization');
       ipConnectionCounts.set(clientIp, (ipConnectionCounts.get(clientIp) ?? 1) - 1);
       return;
     }
 
     if (!targetDeviceId && !pairingCode) {
-      console.log(`[relay] WebSocket auth failed: missing target or pairingCode query parameter`);
+      logger.warn({ clientIp }, 'websocket auth failed: missing target or pairingCode query parameter');
       ws.close(4001, 'missing target or pairingCode');
       ipConnectionCounts.set(clientIp, (ipConnectionCounts.get(clientIp) ?? 1) - 1);
       return;
@@ -113,14 +114,14 @@ export function attachWsRelay(
     const token = authMatch ? authMatch[1] : queryToken!;
     const deviceId = store.validateToken(token);
     if (!deviceId) {
-      console.log(`[relay] WebSocket auth failed: invalid token`);
+      logger.warn({ clientIp }, 'websocket auth failed: invalid token');
       ws.close(4001, 'invalid token');
       ipConnectionCounts.set(clientIp, (ipConnectionCounts.get(clientIp) ?? 1) - 1);
       return;
     }
 
     if (pairingCode && !store.validatePairingCodeForWs(pairingCode)) {
-      console.log(`[relay] WebSocket auth failed: invalid or expired pairingCode`);
+      logger.warn({ clientIp }, 'websocket auth failed: invalid or expired pairingCode');
       ws.close(4001, 'invalid pairingCode');
       ipConnectionCounts.set(clientIp, (ipConnectionCounts.get(clientIp) ?? 1) - 1);
       return;
