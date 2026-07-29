@@ -8,32 +8,15 @@
 // - 删除走真实删除(用户主动操作),非归档;归档通过 updateHabit({ archived: true })。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
-import type { Habit, Notification } from '../../types';
+import type { Habit } from '../../types';
 import { generateId } from '../constants';
 import { pushUndo, undoDeleteHabit } from '../../hooks/useUndo';
+import { pushNotification } from '../../utils/notificationUtils';
 
 const HABIT_COLORS = ['#5B6CFF', '#34D399', '#F59E0B', '#FF6B9D', '#9D7BFF', '#0EA5E9'];
 
 function pickColor(index: number): string {
   return HABIT_COLORS[index % HABIT_COLORS.length]!;
-}
-
-function pushNotification(
-  get: () => AppStore,
-  params: { type: Notification['type']; title: string; message?: string },
-): void {
-  const notification: Notification = {
-    id: `n-${generateId()}`,
-    type: params.type,
-    title: params.title,
-    message: params.message ?? '',
-    isRead: false,
-    isArchived: false,
-    actionUrl: null,
-    data: {},
-    createdAt: new Date(),
-  };
-  get().addNotification(notification);
 }
 
 export interface HabitsSlice {

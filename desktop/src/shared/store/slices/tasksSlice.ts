@@ -4,7 +4,7 @@
 // 可切换为 Record<id, Task> 索引并在 selector 中派生数组。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
-import type { Task, Filter, SortOption, Comment, Attachment, ChecklistItem, Notification } from '../../types';
+import type { Task, Filter, SortOption, Comment, Attachment, ChecklistItem } from '../../types';
 import {
   createTask as apiCreateTask,
   deleteTask as apiDeleteTask,
@@ -14,38 +14,7 @@ import { generateId, deepClone } from '../constants';
 import { pluginManager } from '../../plugins';
 import { pushUndo, undoDeleteTask } from '../../hooks/useUndo';
 import { buildNextRecurrenceTask } from '../../utils/recurrenceUtils';
-
-/**
- * P0 修复:把所有"用户可见反馈"从 console.log 改成真实通知。
- *
- * 之前 toast.error/success/info 只 console.warn/log,API 失败用户看不到任何提示。
- * 现在 push 到 uiSlice.notifications,Toaster 组件会渲染并 5 秒自动消失。
- *
- * slice 直接调 get().addNotification(...) 而非 toast lib,避免引入 UI 库耦合 store 层。
- * useAppStore.getState() 在 slice 内通过 get() 取(同一 store),无循环依赖。
- */
-function pushNotification(
-  get: () => AppStore,
-  params: {
-    type: Notification['type'];
-    title: string;
-    message?: string;
-    data?: Record<string, unknown>;
-  },
-): void {
-  const notification: Notification = {
-    id: `n-${generateId()}`,
-    type: params.type,
-    title: params.title,
-    message: params.message ?? '',
-    data: params.data ?? {},
-    isRead: false,
-    isArchived: false,
-    actionUrl: null,
-    createdAt: new Date(),
-  };
-  get().addNotification(notification);
-}
+import { pushNotification } from '../../utils/notificationUtils';
 
 export interface TasksSlice {
   tasks: Task[];

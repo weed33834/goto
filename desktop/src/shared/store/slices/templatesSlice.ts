@@ -9,12 +9,13 @@
 // - 不走 E2EE 同步:模板是设备本地的个人偏好。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
-import type { Template, TemplateTaskDefaults, Task, Notification } from '../../types';
+import type { Template, TemplateTaskDefaults, Task } from '../../types';
 import { generateId } from '../constants';
 import { pushUndo } from '../../hooks/useUndo';
 // 在 slice 内通过 useAppStore.getState()/setState 实现撤销恢复,
 // 避免把 Template 类型耦合到 useUndo.ts(template 仅本 slice 使用)。
 import { useAppStore } from '../index';
+import { pushNotification } from '../../utils/notificationUtils';
 
 /**
  * 构造 addTask 接受的最小合法 Task 输入(覆盖所有必填字段)。
@@ -67,24 +68,6 @@ function makeDefaultTaskInput(overrides: Partial<Task>): Omit<Task, 'id' | 'crea
     deletedAt: null,
     ...overrides,
   };
-}
-
-function pushNotification(
-  get: () => AppStore,
-  params: { type: Notification['type']; title: string; message?: string },
-): void {
-  const notification: Notification = {
-    id: `n-${generateId()}`,
-    type: params.type,
-    title: params.title,
-    message: params.message ?? '',
-    isRead: false,
-    isArchived: false,
-    actionUrl: null,
-    data: {},
-    createdAt: new Date(),
-  };
-  get().addNotification(notification);
 }
 
 /** 把字符串中的 {{key}} 替换为 variables[key]。未提供的 key 保留原占位符。 */

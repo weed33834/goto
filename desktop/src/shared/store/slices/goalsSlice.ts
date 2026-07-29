@@ -8,26 +8,9 @@
 // - 不走 E2EE 同步:目标是个人规划数据,本地优先即可。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
-import type { Goal, KeyResult, Notification } from '../../types';
+import type { Goal, KeyResult } from '../../types';
 import { generateId } from '../constants';
-
-function pushNotification(
-  get: () => AppStore,
-  params: { type: Notification['type']; title: string; message?: string },
-): void {
-  const notification: Notification = {
-    id: `n-${generateId()}`,
-    type: params.type,
-    title: params.title,
-    message: params.message ?? '',
-    isRead: false,
-    isArchived: false,
-    actionUrl: null,
-    data: {},
-    createdAt: new Date(),
-  };
-  get().addNotification(notification);
-}
+import { pushNotification } from '../../utils/notificationUtils';
 
 export interface GoalsSlice {
   goals: Goal[];

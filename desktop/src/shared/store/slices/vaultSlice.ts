@@ -4,36 +4,10 @@
 // IndexedDB(goto)导致的"双数据源"数据丢失问题。
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../types';
-import type { VaultItem, Notification } from '../../types';
+import type { VaultItem } from '../../types';
 import { generateId } from '../constants';
 import { pushUndo, undoDeleteVaultItem } from '../../hooks/useUndo';
-
-/**
- * P0-3 修复:把所有"用户可见反馈"从静默改成真实通知 + undo。
- * 与 tasksSlice 保持一致 UX(删除可撤销)。
- */
-function pushNotification(
-  get: () => AppStore,
-  params: {
-    type: Notification['type'];
-    title: string;
-    message?: string;
-    data?: Record<string, unknown>;
-  },
-): void {
-  const notification: Notification = {
-    id: `n-${generateId()}`,
-    type: params.type,
-    title: params.title,
-    message: params.message ?? '',
-    data: params.data ?? {},
-    isRead: false,
-    isArchived: false,
-    actionUrl: null,
-    createdAt: new Date(),
-  };
-  get().addNotification(notification);
-}
+import { pushNotification } from '../../utils/notificationUtils';
 
 export interface VaultSlice {
   vaultItems: VaultItem[];
