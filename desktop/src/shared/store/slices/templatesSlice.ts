@@ -97,7 +97,7 @@ export const createTemplatesSlice: StateCreator<AppStore, [], [], TemplatesSlice
 
   addTemplate: (input) => {
     const id = generateId();
-    const now = new Date().toISOString();
+    const now = new Date();
     const newTemplate: Template = {
       id,
       name: input.name.trim(),
@@ -132,7 +132,7 @@ export const createTemplatesSlice: StateCreator<AppStore, [], [], TemplatesSlice
                 updates.description !== undefined
                   ? updates.description.trim() || undefined
                   : t.description,
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             }
           : t,
       ),
@@ -213,8 +213,8 @@ export const createTemplatesSlice: StateCreator<AppStore, [], [], TemplatesSlice
           ? {
               ...t,
               usageCount: t.usageCount + 1,
-              lastUsedAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              lastUsedAt: new Date(),
+              updatedAt: new Date(),
             }
           : t,
       ),

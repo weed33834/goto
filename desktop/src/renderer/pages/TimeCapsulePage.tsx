@@ -40,8 +40,8 @@ export function TimeCapsulePage() {
       return ta - tb;
     });
     unlocked.sort((a, b) => {
-      const ta = Date.parse(a.updatedAt);
-      const tb = Date.parse(b.updatedAt);
+      const ta = a.updatedAt.getTime();
+      const tb = b.updatedAt.getTime();
       return tb - ta;
     });
     return [...locked, ...unlocked];

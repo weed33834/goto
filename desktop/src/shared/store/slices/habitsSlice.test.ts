@@ -25,10 +25,9 @@ describe('habitsSlice', () => {
       expect(habits[0].color).toMatch(/^#[0-9A-Fa-f]{6}$/);
       expect(habits[0].archived).toBe(false);
       expect(habits[0].completedDates).toEqual([]);
-      // createdAt/updatedAt 是 ISO 字符串(非 Date 对象)
-      expect(typeof habits[0].createdAt).toBe('string');
-      expect(typeof habits[0].updatedAt).toBe('string');
-      expect(Number.isNaN(Date.parse(habits[0].createdAt))).toBe(false);
+      // createdAt/updatedAt 是 Date 对象
+      expect(habits[0].createdAt).toBeInstanceOf(Date);
+      expect(habits[0].updatedAt).toBeInstanceOf(Date);
     });
 
     it('name 含空白 → trim 后保存', () => {
@@ -68,7 +67,7 @@ describe('habitsSlice', () => {
       expect(after.name).toBe('新');
       expect(after.description).toBe('备注');
       expect(after.updatedAt).not.toBe(before.updatedAt);
-      expect(Date.parse(after.updatedAt)).toBeGreaterThan(Date.parse(before.updatedAt));
+      expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
     });
 
     it('name 含空白 → trim 后保存', () => {
@@ -164,7 +163,7 @@ describe('habitsSlice', () => {
       await new Promise((r) => setTimeout(r, 5));
       useAppStore.getState().toggleHabitEntry(id, '2026-07-26');
       const after = useAppStore.getState().habits[0].updatedAt;
-      expect(Date.parse(after)).toBeGreaterThan(Date.parse(before));
+      expect(after.getTime()).toBeGreaterThan(before.getTime());
     });
 
     it('不存在的 habitId → 静默无操作', () => {

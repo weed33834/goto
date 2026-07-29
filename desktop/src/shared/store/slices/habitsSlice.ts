@@ -33,7 +33,7 @@ export const createHabitsSlice: StateCreator<AppStore, [], [], HabitsSlice> = (s
 
   addHabit: (input) => {
     const id = generateId();
-    const now = new Date().toISOString();
+    const now = new Date();
     const newHabit: Habit = {
       id,
       name: input.name.trim(),
@@ -64,7 +64,7 @@ export const createHabitsSlice: StateCreator<AppStore, [], [], HabitsSlice> = (s
                 updates.description !== undefined
                   ? updates.description.trim() || undefined
                   : h.description,
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             }
           : h,
       ),
@@ -99,7 +99,7 @@ export const createHabitsSlice: StateCreator<AppStore, [], [], HabitsSlice> = (s
         const completedDates = has
           ? h.completedDates.filter((d) => d !== dateStr)
           : [...h.completedDates, dateStr].sort();
-        return { ...h, completedDates, updatedAt: new Date().toISOString() };
+        return { ...h, completedDates, updatedAt: new Date() };
       }),
     }));
     get().saveData();

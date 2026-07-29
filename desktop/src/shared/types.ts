@@ -819,8 +819,8 @@ export interface VaultItem {
   title: string;
   fields: VaultField[];
   isHidden: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   /**
    * 时间胶囊元数据:仅当 type === 'timeCapsule' 时存在。
    * unlockAt 之前消息内容被遮蔽,到达后允许查看明文。
@@ -864,8 +864,8 @@ export interface Habit {
   cadence: 'daily' | 'weekly';
   /** 显示色(用于热力图与卡片标识)。HEX 字符串。 */
   color: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   archived: boolean;
   /** 已完成日期数组,元素为 'YYYY-MM-DD'(本地时区)。 */
   completedDates: string[];
@@ -894,12 +894,12 @@ export interface Template {
   variables: string[];
   /** 使用次数,排序用。 */
   usageCount: number;
-  /** 最后使用时间(ISO 字符串),排序用。 */
-  lastUsedAt: string | null;
+  /** 最后使用时间,排序用。 */
+  lastUsedAt: Date | null;
   /** 是否内置(系统模板,不可删除)。 */
   isBuiltIn: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -940,8 +940,8 @@ export interface Goal {
   period: string;
   status: 'active' | 'completed' | 'paused' | 'archived';
   keyResults: KeyResult[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**

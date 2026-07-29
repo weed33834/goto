@@ -21,7 +21,7 @@ export const createVaultSlice: StateCreator<AppStore, [], [], VaultSlice> = (set
 
   addVaultItem: (item) => {
     const id = generateId();
-    const now = new Date().toISOString();
+    const now = new Date();
     const newItem: VaultItem = { ...item, id, createdAt: now, updatedAt: now };
     set((state) => ({ vaultItems: [...state.vaultItems, newItem] }));
     get().saveData();
@@ -31,7 +31,7 @@ export const createVaultSlice: StateCreator<AppStore, [], [], VaultSlice> = (set
   updateVaultItem: (id, updates) => {
     set((state) => ({
       vaultItems: state.vaultItems.map((v) =>
-        v.id === id ? { ...v, ...updates, id, updatedAt: new Date().toISOString() } : v,
+        v.id === id ? { ...v, ...updates, id, updatedAt: new Date() } : v,
       ),
     }));
     get().saveData();

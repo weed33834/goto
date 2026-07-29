@@ -666,7 +666,7 @@ export const webAPI: GotoAPI = {
       return useAppStore.getState().vaultItems;
     },
     create: async (item) => {
-      const now = new Date().toISOString();
+      const now = new Date();
       const newItem: VaultItem = {
         ...item,
         id: generateId('vault'),
@@ -686,7 +686,7 @@ export const webAPI: GotoAPI = {
         ...existing,
         ...updates,
         id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       };
       useAppStore.setState({
         vaultItems: state.vaultItems.map((v) => (v.id === id ? updated : v)),

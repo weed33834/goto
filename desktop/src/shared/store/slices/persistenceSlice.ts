@@ -76,7 +76,7 @@ type ArrayField = {
 // 数组字段统一配置：loadData / saveData / importData 三段流程由此表驱动。
 const ARRAY_FIELDS: ArrayField[] = [
   { storage: STORAGE_KEYS.TASKS, state: 'tasks', requireNonEmpty: false },
-  { storage: STORAGE_KEYS.VAULT, state: 'vaultItems', loadMap: (d) => d },
+  { storage: STORAGE_KEYS.VAULT, state: 'vaultItems' },
   { storage: STORAGE_KEYS.PROJECTS, state: 'projects' },
   { storage: STORAGE_KEYS.CATEGORIES, state: 'categories' },
   { storage: STORAGE_KEYS.TAGS, state: 'tags' },
@@ -86,12 +86,10 @@ const ARRAY_FIELDS: ArrayField[] = [
   // 习惯是设备本地行为数据,不走 E2EE 同步,但本地持久化走同一套 ARRAY_FIELDS。
   // 用户在导出备份时大概率希望带上习惯打卡历史(换设备/重装时能恢复),
   // 因此进 IMPORTABLE_STATES —— 备份文件迁移时 habits 一并迁移。
-  // loadMap 透传:Habit.createdAt/updatedAt 是 ISO 字符串(非 Date 对象),
-  // 走默认 parseDates 会被强制转成 Date,与类型声明冲突。
-  { storage: STORAGE_KEYS.HABITS, state: 'habits', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
-  // 模板/目标同样是设备本地数据,字符串日期,走透传 loadMap/importMap。
-  { storage: STORAGE_KEYS.TEMPLATES, state: 'templates', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
-  { storage: STORAGE_KEYS.GOALS, state: 'goals', requireNonEmpty: false, loadMap: (d) => d, importMap: (d) => d },
+  { storage: STORAGE_KEYS.HABITS, state: 'habits', requireNonEmpty: false },
+  // 模板/目标同样是设备本地数据。
+  { storage: STORAGE_KEYS.TEMPLATES, state: 'templates', requireNonEmpty: false },
+  { storage: STORAGE_KEYS.GOALS, state: 'goals', requireNonEmpty: false },
 ];
 
 // 仅以下字段参与导入（与原 importData 行为一致）。

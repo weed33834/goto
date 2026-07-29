@@ -45,8 +45,8 @@ function makeCapsule(overrides: Partial<VaultItem> = {}): VaultItem {
     title: '一封信',
     fields: [{ id: 'f1', name: 'message', value: '秘密内容', isSensitive: true }],
     isHidden: false,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     timeCapsule: { unlockAt: new Date(Date.now() + 86_400_000).toISOString() },
     ...overrides,
   };

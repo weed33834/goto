@@ -35,7 +35,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
 
   addGoal: (input) => {
     const id = generateId();
-    const now = new Date().toISOString();
+    const now = new Date();
     const newGoal: Goal = {
       id,
       title: input.title.trim(),
@@ -65,7 +65,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
                   ? updates.description.trim() || undefined
                   : g.description,
               period: updates.period !== undefined ? updates.period.trim() : g.period,
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             }
           : g,
       ),
@@ -92,7 +92,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
     set((state) => ({
       goals: state.goals.map((g) =>
         g.id === goalId
-          ? { ...g, keyResults: [...g.keyResults, newKr], updatedAt: new Date().toISOString() }
+          ? { ...g, keyResults: [...g.keyResults, newKr], updatedAt: new Date() }
           : g,
       ),
     }));
@@ -109,7 +109,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
               keyResults: g.keyResults.map((kr) =>
                 kr.id === krId ? { ...kr, ...updates, id: krId } : kr,
               ),
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             }
           : g,
       ),
@@ -128,7 +128,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
       if (allDone) {
         set((state) => ({
           goals: state.goals.map((g) =>
-            g.id === goalId ? { ...g, status: 'completed', updatedAt: new Date().toISOString() } : g,
+            g.id === goalId ? { ...g, status: 'completed', updatedAt: new Date() } : g,
           ),
         }));
         pushNotification(get, {
@@ -149,7 +149,7 @@ export const createGoalsSlice: StateCreator<AppStore, [], [], GoalsSlice> = (set
           ? {
               ...g,
               keyResults: g.keyResults.filter((kr) => kr.id !== krId),
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             }
           : g,
       ),

@@ -60,8 +60,8 @@ function makeHabit(overrides: Partial<Habit> = {}): Habit {
     name: 'habit',
     cadence: 'daily',
     color: '#5B6CFF',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     archived: false,
     completedDates: [],
     ...overrides,
@@ -75,8 +75,8 @@ function makeGoal(overrides: Partial<Goal> = {}): Goal {
     period: '2026-Q3',
     status: 'active',
     keyResults: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
   };
 }
@@ -170,7 +170,7 @@ describe('generateInsights', () => {
   it('目标 7 天未更新触发 info', () => {
     const old = new Date();
     old.setDate(old.getDate() - 10);
-    const goals = [makeGoal({ updatedAt: old.toISOString(), keyResults: [{ id: 'k1', title: 'kr', type: 'quantitative', target: 10, current: 1 }] })];
+    const goals = [makeGoal({ updatedAt: old, keyResults: [{ id: 'k1', title: 'kr', type: 'quantitative', target: 10, current: 1 }] })];
     const out = generateInsights({ tasks: [], habits: [], goals });
     expect(out.some((s) => s.id === 'goal-stale')).toBe(true);
   });
