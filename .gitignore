@@ -65,4 +65,6 @@ desktop/playwright/.cache/
 
 # 临时数据
 backend/data/*.db-journal
-# AGENTS.md 和 .trae/ 本地开发辅助，不入库
+# 本地开发辅助（由 ai-rule Rule Hub 生成，不入库，与实际项目分离）
+AGENTS.md
+provenance/
