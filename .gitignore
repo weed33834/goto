@@ -65,3 +65,4 @@ desktop/playwright/.cache/
 
 # 临时数据
 backend/data/*.db-journal
+# AGENTS.md 和 .trae/ 本地开发辅助，不入库
