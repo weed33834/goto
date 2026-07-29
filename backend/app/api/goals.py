@@ -1,8 +1,4 @@
 """OKR 目标 API"""
-import json
-from datetime import datetime, timezone
-from typing import Any
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,47 +14,11 @@ from app.api import (
 )
 from app.database import get_db
 from app.models.goal import Goal
-from app.schemas.goal import (
-    GoalCreate,
-    GoalResponse,
-    GoalUpdate,
-)
+from app.schemas.goal import GoalCreate, GoalResponse, GoalUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
+from app.utils.json_utils import json_dump, utc_now
 
 router = APIRouter(prefix="/goals", tags=["goals"])
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _dump(value: Any) -> str:
-    if value is None:
-        return "[]"
-    return json.dumps(value, ensure_ascii=False, default=str)
-
-
-def _load(value: str | None) -> list[dict[str, Any]]:
-    if value is None:
-        return []
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return []
-
-
-def _goal_to_response(goal: Goal) -> dict[str, Any]:
-    return {
-        "id": goal.id,
-        "title": goal.title,
-        "description": goal.description,
-        "period": goal.period,
-        "status": goal.status,
-        "created_by": goal.created_by,
-        "created_at": goal.created_at,
-        "updated_at": goal.updated_at,
-        "key_results": _load(goal.key_results),
-    }
 
 
 @router.get(
@@ -70,13 +30,13 @@ def _goal_to_response(goal: Goal) -> dict[str, Any]:
 async def list_goals(
     status: str | None = Query(None, description="按状态过滤"),
     db: AsyncSession = Depends(get_db),
-) -> list[dict[str, Any]]:
+):
     stmt = select(Goal)
     if status is not None:
         stmt = stmt.where(Goal.status == status)
     stmt = stmt.order_by(Goal.created_at.desc())
     result = await db.execute(stmt)
-    return [_goal_to_response(g) for g in result.scalars().all()]
+    return result.scalars().all()
 
 
 @router.post(
@@ -88,14 +48,14 @@ async def list_goals(
 )
 async def create_goal(
     goal_in: GoalCreate, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
-    now = _now()
+):
+    now = utc_now()
     goal = Goal(
         id=goal_in.id or generate_id("goal"),
         **goal_in.model_dump(exclude={
             "id", "created_at", "updated_at", "key_results",
         }),
-        key_results=_dump(
+        key_results=json_dump(
             [kr.model_dump() for kr in goal_in.key_results]
         ),
         created_at=now,
@@ -104,7 +64,7 @@ async def create_goal(
     db.add(goal)
     await db.commit()
     await db.refresh(goal)
-    return _goal_to_response(goal)
+    return goal
 
 
 @router.get(
@@ -115,9 +75,8 @@ async def create_goal(
 )
 async def get_goal(
     goal_id: str, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
-    goal = await get_or_404(db, Goal, goal_id, "Goal not found")
-    return _goal_to_response(goal)
+):
+    return await get_or_404(db, Goal, goal_id, "Goal not found")
 
 
 @router.patch(
@@ -128,18 +87,19 @@ async def get_goal(
 )
 async def update_goal(
     goal_id: str, updates: GoalUpdate, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
+):
     goal = await get_or_404(db, Goal, goal_id, "Goal not found")
-    json_fields = {
-        "key_results": lambda v: _dump(
+
+    def _dump_key_results(v):
+        return json_dump(
             [kr.model_dump() for kr in v] if v and hasattr(v[0], "model_dump") else v
-        ),
-    }
-    apply_updates(goal, updates, json_fields=json_fields)
-    goal.updated_at = _now()
+        )
+
+    apply_updates(goal, updates, json_fields={"key_results": _dump_key_results})
+    goal.updated_at = utc_now()
     await db.commit()
     await db.refresh(goal)
-    return _goal_to_response(goal)
+    return goal
 
 
 @router.delete(

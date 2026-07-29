@@ -1,8 +1,9 @@
 """保险库 Pydantic schemas"""
+import json
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class VaultField(BaseModel):
@@ -46,3 +47,23 @@ class VaultItemResponse(BaseModel):
     updated_at: datetime
     fields: list[Any] = []
     time_capsule: Optional[Any] = None
+
+    @field_validator("fields", mode="before")
+    @classmethod
+    def _parse_fields(cls, v: Any) -> list[Any]:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return v if v else []
+
+    @field_validator("time_capsule", mode="before")
+    @classmethod
+    def _parse_time_capsule(cls, v: Any) -> Any | None:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return v

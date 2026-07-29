@@ -1,8 +1,9 @@
 """OKR 目标 Pydantic schemas"""
+import json
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class KeyResult(BaseModel):
@@ -43,3 +44,13 @@ class GoalResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     key_results: list[Any] = []
+
+    @field_validator("key_results", mode="before")
+    @classmethod
+    def _parse_key_results(cls, v: Any) -> list[Any]:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return v if v else []

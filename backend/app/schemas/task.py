@@ -1,8 +1,9 @@
 """任务相关 Pydantic schemas"""
+import json
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Subtask(BaseModel):
@@ -142,6 +143,27 @@ class TaskResponse(TaskBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+    # JSON 文本列 → Python 对象自动解析，消除 13 字段手动 _load 映射
+    _JSON_FIELDS = frozenset({
+        "tags", "subtasks", "attachments", "comments", "links",
+        "custom_fields", "dependencies", "blocked_by", "notes", "checklist",
+        "recurrence", "device_version", "location",
+    })
+
+    @model_validator(mode="before")
+    @classmethod
+    def _parse_json_text_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        for field_name in cls._JSON_FIELDS:
+            val = data.get(field_name)
+            if isinstance(val, str):
+                try:
+                    data[field_name] = json.loads(val)
+                except (json.JSONDecodeError, TypeError):
+                    data[field_name] = None
+        return data
+
 
 class ProjectBase(BaseModel):
     name: str
@@ -191,6 +213,16 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _parse_tags(cls, data: Any) -> Any:
+        if isinstance(data, dict) and isinstance(data.get("tags"), str):
+            try:
+                data["tags"] = json.loads(data["tags"])
+            except (json.JSONDecodeError, TypeError):
+                data["tags"] = []
+        return data
 
 
 class CategoryBase(BaseModel):

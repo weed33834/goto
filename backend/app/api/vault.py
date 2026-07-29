@@ -1,8 +1,4 @@
 """保险库 API"""
-import json
-from datetime import datetime, timezone
-from typing import Any
-
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,62 +14,17 @@ from app.api import (
 )
 from app.database import get_db
 from app.models.vault import VaultItem
-from app.schemas.vault import (
-    VaultItemCreate,
-    VaultItemResponse,
-    VaultItemUpdate,
-)
+from app.schemas.vault import VaultItemCreate, VaultItemResponse, VaultItemUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
+from app.utils.json_utils import json_dump, utc_now
 
 router = APIRouter(prefix="/vault", tags=["vault"])
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _dump(value: Any) -> str:
-    if value is None:
-        return "[]"
-    return json.dumps(value, ensure_ascii=False, default=str)
-
-
-def _dump_nullable(value: Any) -> str | None:
+def _dump_nullable(value) -> str | None:
     if value is None:
         return None
-    return json.dumps(value, ensure_ascii=False, default=str)
-
-
-def _load(value: str | None) -> list[dict[str, Any]]:
-    if value is None:
-        return []
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return []
-
-
-def _load_nullable(value: str | None) -> Any:
-    if value is None:
-        return None
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return None
-
-
-def _vault_to_response(item: VaultItem) -> dict[str, Any]:
-    return {
-        "id": item.id,
-        "type": item.type,
-        "title": item.title,
-        "is_hidden": item.is_hidden,
-        "created_by": item.created_by,
-        "created_at": item.created_at,
-        "updated_at": item.updated_at,
-        "fields": _load(item.fields),
-        "time_capsule": _load_nullable(item.time_capsule),
-    }
+    return json_dump(value)
 
 
 @router.get(
@@ -84,11 +35,11 @@ def _vault_to_response(item: VaultItem) -> dict[str, Any]:
 )
 async def list_vault_items(
     db: AsyncSession = Depends(get_db),
-) -> list[dict[str, Any]]:
+):
     result = await db.execute(
         select(VaultItem).order_by(VaultItem.created_at.desc())
     )
-    return [_vault_to_response(v) for v in result.scalars().all()]
+    return result.scalars().all()
 
 
 @router.post(
@@ -100,14 +51,14 @@ async def list_vault_items(
 )
 async def create_vault_item(
     item_in: VaultItemCreate, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
-    now = _now()
+):
+    now = utc_now()
     item = VaultItem(
         id=item_in.id or generate_id("vault"),
         **item_in.model_dump(exclude={
             "id", "created_at", "updated_at", "fields", "time_capsule",
         }),
-        fields=_dump(
+        fields=json_dump(
             [f.model_dump() for f in item_in.fields]
         ),
         time_capsule=_dump_nullable(
@@ -119,7 +70,7 @@ async def create_vault_item(
     db.add(item)
     await db.commit()
     await db.refresh(item)
-    return _vault_to_response(item)
+    return item
 
 
 @router.get(
@@ -130,9 +81,8 @@ async def create_vault_item(
 )
 async def get_vault_item(
     item_id: str, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
-    item = await get_or_404(db, VaultItem, item_id, "Vault item not found")
-    return _vault_to_response(item)
+):
+    return await get_or_404(db, VaultItem, item_id, "Vault item not found")
 
 
 @router.patch(
@@ -143,10 +93,10 @@ async def get_vault_item(
 )
 async def update_vault_item(
     item_id: str, updates: VaultItemUpdate, db: AsyncSession = Depends(get_db)
-) -> dict[str, Any]:
+):
     item = await get_or_404(db, VaultItem, item_id, "Vault item not found")
     json_fields = {
-        "fields": lambda v: _dump(
+        "fields": lambda v: json_dump(
             [f.model_dump() for f in v] if v and hasattr(v[0], "model_dump") else v
         ),
         "time_capsule": lambda v: _dump_nullable(
@@ -154,10 +104,10 @@ async def update_vault_item(
         ),
     }
     apply_updates(item, updates, json_fields=json_fields)
-    item.updated_at = _now()
+    item.updated_at = utc_now()
     await db.commit()
     await db.refresh(item)
-    return _vault_to_response(item)
+    return item
 
 
 @router.delete(

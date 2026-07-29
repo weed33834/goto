@@ -1,8 +1,9 @@
 """任务模板 Pydantic schemas"""
+import json
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TemplateCreate(BaseModel):
@@ -39,3 +40,23 @@ class TemplateResponse(BaseModel):
     updated_at: datetime
     task_defaults: Any = {}
     variables: list[Any] = []
+
+    @field_validator("task_defaults", mode="before")
+    @classmethod
+    def _parse_task_defaults(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return v if v is not None else {}
+
+    @field_validator("variables", mode="before")
+    @classmethod
+    def _parse_variables(cls, v: Any) -> list[Any]:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return v if v else []
