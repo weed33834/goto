@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.api import tasks
+from app.api import goals, habits, tasks, templates, vault
 from app.api.deps import get_current_user
 from app.config import settings
 from app.core.security import get_api_token_file_path, get_or_create_api_token
@@ -17,6 +17,22 @@ _TAGS_METADATA = [
     {
         "name": "tasks",
         "description": "任务管理：任务、项目、分类、标签的 CRUD 与软删除。",
+    },
+    {
+        "name": "habits",
+        "description": "习惯追踪：习惯的 CRUD 与签到管理。",
+    },
+    {
+        "name": "goals",
+        "description": "OKR 目标：目标的 CRUD 与关键结果管理。",
+    },
+    {
+        "name": "templates",
+        "description": "任务模板：可复用任务模板的 CRUD。",
+    },
+    {
+        "name": "vault",
+        "description": "保险库：密码等敏感信息加密存储条目的 CRUD。",
     },
 ]
 
@@ -155,4 +171,16 @@ async def health_check() -> HealthResponse:
 # 注册 API 路由，所有 /api/v1/* 端点都需要认证
 app.include_router(
     tasks.router, prefix="/api/v1", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    habits.router, prefix="/api/v1", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    goals.router, prefix="/api/v1", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    templates.router, prefix="/api/v1", dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    vault.router, prefix="/api/v1", dependencies=[Depends(get_current_user)]
 )
