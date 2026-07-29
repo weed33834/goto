@@ -12,6 +12,32 @@ export class ApiError extends Error {
   }
 }
 
+// -- 请求重试 --
+
+const RETRY_MAX = 2;
+const RETRY_BASE_MS = 500;
+const RETRYABLE_STATUSES = new Set([408, 429, 502, 503, 504]);
+
+function isRetryableError(err: unknown): boolean {
+  if (err instanceof TypeError) return true; // 网络错误
+  if (err instanceof DOMException && err.name === 'AbortError') return false;
+  if (err instanceof ApiError) return RETRYABLE_STATUSES.has(err.status);
+  return false;
+}
+
+async function withRetry<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (attempt < RETRY_MAX && isRetryableError(err)) {
+      const delay = RETRY_BASE_MS * 2 ** attempt;
+      await new Promise((r) => setTimeout(r, delay));
+      return withRetry(fn, attempt + 1);
+    }
+    throw err;
+  }
+}
+
 /** 测试连接结果:供 SettingsPage 后端连接区显示状态反馈。 */
 export interface ConnectionTestResult {
   ok: boolean;
@@ -57,54 +83,62 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 export async function get<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: await authHeaders(),
+  return withRetry(async () => {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: await authHeaders(),
+    });
+    if (!response.ok) {
+      throw new ApiError(await parseError(response), response.status);
+    }
+    return response.json() as Promise<T>;
   });
-  if (!response.ok) {
-    throw new ApiError(await parseError(response), response.status);
-  }
-  return response.json() as Promise<T>;
 }
 
 export async function post<T>(url: string, body: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(await authHeaders()),
-    },
-    body: JSON.stringify(body),
+  return withRetry(async () => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await authHeaders()),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new ApiError(await parseError(response), response.status);
+    }
+    return response.json() as Promise<T>;
   });
-  if (!response.ok) {
-    throw new ApiError(await parseError(response), response.status);
-  }
-  return response.json() as Promise<T>;
 }
 
 export async function patch<T>(url: string, body: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(await authHeaders()),
-    },
-    body: JSON.stringify(body),
+  return withRetry(async () => {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await authHeaders()),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new ApiError(await parseError(response), response.status);
+    }
+    return response.json() as Promise<T>;
   });
-  if (!response.ok) {
-    throw new ApiError(await parseError(response), response.status);
-  }
-  return response.json() as Promise<T>;
 }
 
 export async function del(url: string): Promise<void> {
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: await authHeaders(),
+  return withRetry(async () => {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: await authHeaders(),
+    });
+    if (!response.ok) {
+      throw new ApiError(await parseError(response), response.status);
+    }
   });
-  if (!response.ok) {
-    throw new ApiError(await parseError(response), response.status);
-  }
 }
 
 export function isApiAvailable(): Promise<boolean> {

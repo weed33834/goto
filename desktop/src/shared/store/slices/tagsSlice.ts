@@ -71,12 +71,20 @@ export const createTagsSlice: StateCreator<AppStore, [], [], TagsSlice> = (set, 
   },
 
   mergeTags: (sourceId, targetId) => {
+    const allTags = get().tags;
+    const sourceTag = allTags.find((t) => t.id === sourceId);
+    const targetTag = allTags.find((t) => t.id === targetId);
+    if (!sourceTag || !targetTag) return;
+
+    const sourceName = sourceTag.name;
+    const targetName = targetTag.name;
+
     const tasks = get().tasks;
     tasks.forEach((task) => {
-      if (task.tags.includes(sourceId)) {
-        const newTags = task.tags.filter((t) => t !== sourceId);
-        if (!newTags.includes(targetId)) {
-          newTags.push(targetId);
+      if (task.tags.includes(sourceName)) {
+        const newTags = task.tags.filter((t) => t !== sourceName);
+        if (!newTags.includes(targetName)) {
+          newTags.push(targetName);
         }
         get().updateTask(task.id, { tags: newTags });
       }
