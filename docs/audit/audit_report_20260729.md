@@ -1,3 +1,14 @@
+---
+AIGC:
+    Label: "1"
+    ContentProducer: 001191440300708461136T1XGW3
+    ProduceID: 98adaa6f98486df4666888a6691e7607_4587461f8b4611f197fe525400826444
+    ReservedCode1: 7WPIZhmGMWnAnvVexCjv3OWmQWMUO/iyjd2h66dpiDdrFXAiOaI8kVBPgxhCsFVttYq2Eme05Ay4ZaaX1pt4LVxn8PPJIUEnvIHgBl89S4wspN/iaFfvScIv4P/cGCwDWJ1SzVL3QLjearosJMQi8paJYio1x8l3kWgbHGhqlkUnPp+3b4t9+pcppDk=
+    ContentPropagator: 001191440300708461136T1XGW3
+    PropagateID: 98adaa6f98486df4666888a6691e7607_4587461f8b4611f197fe525400826444
+    ReservedCode2: 7WPIZhmGMWnAnvVexCjv3OWmQWMUO/iyjd2h66dpiDdrFXAiOaI8kVBPgxhCsFVttYq2Eme05Ay4ZaaX1pt4LVxn8PPJIUEnvIHgBl89S4wspN/iaFfvScIv4P/cGCwDWJ1SzVL3QLjearosJMQi8paJYio1x8l3kWgbHGhqlkUnPp+3b4t9+pcppDk=
+---
+
 # Goto v0.2.0 全链路因果逻辑与场景覆盖审计报告
 
 > **审计日期**: 2026-07-29
@@ -277,3 +288,4 @@ syncNow: async () => {
 ---
 
 > **审计结论**：核心链路（启动/CRUD/加密/配对/同步/备份）已验证跑通，但存在 4 个 P0 阻断项需立即修复。备份覆盖、同步范围、syncNow 和 webAPI.generatePairingCode 会直接影响用户数据完整性和跨设备同步体验。全场景测试框架缺失，页面级测试需要系统性补齐。
+*（内容由AI生成，仅供参考）*
