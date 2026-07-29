@@ -253,7 +253,7 @@ export function useSyncRuntime(): UseSyncRuntimeResult {
       // 持久化 SyncStore + 业务回写 applier
       const applier = createSyncRecordApplier(useAppStore);
       const store = createPersistentSyncStore({ applier });
-      const tables = ['tasks'];
+      const tables = ['tasks', 'projects', 'categories', 'tags', 'vault_items'];
 
       const wsUrl = relayHttpUrlToWsUrl(relayUrl as string);
 

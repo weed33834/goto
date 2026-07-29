@@ -30,6 +30,7 @@ import { browserStorage } from '../../shared/utils/browserStorage';
 import type { AppStore } from '../../shared/store/types';
 import {
   claimPairingCodeAndPair,
+  generatePairingCode,
   type PairingResult,
 } from '../../shared/sync/pairingService';
 import { loadDeviceIdentity } from '../../shared/sync/syncIdentity';
@@ -802,20 +803,30 @@ export const webAPI: GotoAPI = {
       await setKV('app_settings', 'sync_state', { ...state, relayUrl: url });
     },
     syncNow: async () => {
-      // 同步逻辑由 src/shared/sync 的 syncSlice 驱动,这里只触发状态更新
-      const state = await webAPI.sync.getState();
-      await setKV('app_settings', 'sync_state', {
-        ...state,
-        lastSyncAt: Date.now(),
-      });
+      await useAppStore.getState().performSync();
     },
     generatePairingCode: async () => {
-      // host 模式配对由 useSyncRuntime.startResponderPairing 接通真实 relay:
-      //   pairingService.generatePairingCode → relay 发 8 位码 → respondToPairing 等待 claim。
-      // 本 API 仅作兼容占位,真实配对请通过 Settings → 同步 → 添加新设备 触发。
-      throw new Error(
-        '配对码生成由同步运行时处理,请通过设置 → 同步 → 添加新设备 触发',
-      );
+      const store = useAppStore.getState();
+      let relayUrl = store.syncConfig.relayUrl;
+      if (!relayUrl) {
+        const syncState = await webAPI.sync.getState();
+        relayUrl = syncState.relayUrl;
+      }
+      if (!relayUrl || !isValidRelayUrl(relayUrl)) {
+        throw new Error('请先配置有效的 relay 地址(以 http:// 或 https:// 开头)');
+      }
+
+      // 确保设备身份已就绪
+      let identity = await loadDeviceIdentity();
+      if (!identity) {
+        await store.ensureDeviceIdentity('Goto Web');
+        identity = await loadDeviceIdentity();
+      }
+      if (!identity) {
+        throw new Error('无法加载或生成设备身份');
+      }
+
+      return generatePairingCode(relayUrl, identity);
     },
     claimPairingCode: async (code: string) => {
       // 接通真实配对流程(pairingService.claimPairingCodeAndPair):
@@ -922,6 +933,9 @@ async function exportAllData(): Promise<Record<string, unknown>> {
     projects: s.projects,
     categories: s.categories,
     tags: s.tags,
+    habits: s.habits,
+    templates: s.templates,
+    goals: s.goals,
   };
 }
 
@@ -937,6 +951,9 @@ async function importAllData(data: Record<string, unknown>): Promise<void> {
   if (Array.isArray(data.projects)) patch.projects = data.projects as AppStore['projects'];
   if (Array.isArray(data.categories)) patch.categories = data.categories as AppStore['categories'];
   if (Array.isArray(data.tags)) patch.tags = data.tags as AppStore['tags'];
+  if (Array.isArray(data.habits)) patch.habits = data.habits as AppStore['habits'];
+  if (Array.isArray(data.templates)) patch.templates = data.templates as AppStore['templates'];
+  if (Array.isArray(data.goals)) patch.goals = data.goals as AppStore['goals'];
   useAppStore.setState(patch);
   await useAppStore.getState().saveData();
 }

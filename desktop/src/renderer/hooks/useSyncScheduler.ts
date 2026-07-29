@@ -106,7 +106,7 @@ export function useSyncScheduler(): { syncNow: () => void } {
       // 持久化 SyncStore + 业务回写 applier(把 SyncRecord 解密后写回 useAppStore)
       const applier = createSyncRecordApplier(useAppStore);
       const store = createPersistentSyncStore({ applier });
-      const tables = ['tasks'];
+      const tables = ['tasks', 'projects', 'categories', 'tags', 'vault_items'];
 
       const wsUrl = relayHttpUrlToWsUrl(relayUrl);
       let engine: SyncEngine | null = null;
