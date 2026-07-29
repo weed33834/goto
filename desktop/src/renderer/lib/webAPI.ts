@@ -28,6 +28,7 @@ import type {
 import { useAppStore } from '../../shared/store';
 import { browserStorage } from '../../shared/utils/browserStorage';
 import type { AppStore } from '../../shared/store/types';
+import { bytesToHex, hexToBytes } from '../../shared/sync/bytes';
 import {
   claimPairingCodeAndPair,
   generatePairingCode,
@@ -149,22 +150,9 @@ const BACKUP_ALGO_ARGON2ID = 0x02; // 新版:argon2id
 const derivedKeyCache = new Map<string, ArrayBuffer>();
 
 /**
- * ArrayBuffer / Uint8Array 转 hex 字符串。
+ * hex 编解码统一复用 @shared/sync/bytes(此前 webAPI 内另有一份副本,已删除)。
+ * keyBits 为 ArrayBuffer,转 hex 时包一层 Uint8Array。
  */
-function bufferToHex(buffer: ArrayBuffer | Uint8Array): string {
-  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/** hex 字符串转 Uint8Array。空串返回零长度数组(避免 match(null).map 崩溃)。 */
-function hexToBytes(hex: string): Uint8Array {
-  if (!hex) return new Uint8Array(0);
-  const pairs = hex.match(/.{1,2}/g);
-  if (!pairs) return new Uint8Array(0);
-  return new Uint8Array(pairs.map((b) => parseInt(b, 16)));
-}
 
 /**
  * 从密码派生密钥位(256 位 ArrayBuffer)。
@@ -179,7 +167,7 @@ export async function deriveKeyBits(
   algorithm: 'argon2id' | 'pbkdf2' = 'argon2id',
   iterations: number = BACKUP_ITERATIONS_PBKDF2,
 ): Promise<ArrayBuffer> {
-  const saltHex = bufferToHex(salt);
+  const saltHex = bytesToHex(salt);
   const cacheKey = `${algorithm}:${saltHex}:${password}`;
   const cached = derivedKeyCache.get(cacheKey);
   if (cached) {
@@ -237,7 +225,7 @@ export function clearDerivedKeyCache(): void {
 export async function createVerifier(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const keyBits = await deriveKeyBits(password, salt, 'argon2id');
-  return `2:${bufferToHex(salt)}:${bufferToHex(keyBits)}`;
+  return `2:${bytesToHex(salt)}:${bytesToHex(new Uint8Array(keyBits))}`;
 }
 
 /**
@@ -269,7 +257,7 @@ export async function verifyPassword(password: string, verifier: string): Promis
   const salt = hexToBytes(saltHex);
   const iterations = AUTH_ITERATIONS_PBKDF2;
   const keyBits = await deriveKeyBits(password, salt, algorithm, iterations);
-  return bufferToHex(keyBits) === expectedKeyHex;
+  return bytesToHex(new Uint8Array(keyBits)) === expectedKeyHex;
 }
 
 /** 判断 verifier 是否为旧 PBKDF2 格式(需要迁移到 argon2id)。 */

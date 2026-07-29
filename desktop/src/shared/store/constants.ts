@@ -352,16 +352,8 @@ export const STORAGE_KEYS = {
   PLUGINS: 'goto_plugins',
 };
 
-// 生成唯一 ID：优先 crypto.randomUUID()，降级到时间戳+随机串
-export const generateId = (): string =>
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+// 生成唯一 ID：构建目标(现代浏览器/Node18+)均原生支持 crypto.randomUUID()
+export const generateId = (): string => crypto.randomUUID();
 
-// 深拷贝辅助函数
-export const deepClone = <T>(obj: T): T => {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(obj);
-  }
-  return JSON.parse(JSON.stringify(obj));
-};
+// 深拷贝辅助函数：structuredClone 在目标运行时已原生可用
+export const deepClone = <T>(obj: T): T => structuredClone(obj);

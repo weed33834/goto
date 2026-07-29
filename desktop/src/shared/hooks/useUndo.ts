@@ -31,8 +31,8 @@ function notify() {
 }
 
 export function pushUndo(action: Omit<UndoableAction, 'id'>) {
-  // 简单 id 生成,避免 import generateId 触发循环依赖
-  const id = `undo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  // 统一用原生 crypto.randomUUID() 生成 id(generateId 亦基于此,无循环依赖)
+  const id = crypto.randomUUID();
   undoStack.unshift({ id, ...action });
   if (undoStack.length > MAX_UNDO_STACK) {
     undoStack.length = MAX_UNDO_STACK;
