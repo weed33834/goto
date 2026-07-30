@@ -95,7 +95,7 @@ export default defineConfig({
           // framer-motion(动画库,体积大,单独拆)
           'vendor-motion': ['framer-motion'],
           // 状态 + 工具(轻量但多页面共享)
-          'vendor-utils': ['zustand', 'date-fns', 'clsx', 'tailwind-merge', 'lucide-react'],
+          'vendor-utils': ['zustand', 'date-fns', 'clsx', 'lucide-react'],
           // Phase 1.7:拖拽库单独拆(KanbanView + TaskList 共用)
           'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
