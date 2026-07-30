@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* 移动端:去掉点击高亮、禁止橡皮筋滚动,贴近原生手感。 */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}

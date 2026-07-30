@@ -1,5 +1,7 @@
 # pnpm workspace
 # desktop = 纯浏览器 Web 应用(Vite + React);relay = 自部署同步中继服务
+# mobile = 移动端专属 Web 应用(PWA),复用 desktop 共享内核,独立构建/入口
 packages:
   - 'desktop'
   - 'relay'
+  - 'mobile'
