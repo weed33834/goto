@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Goto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1284 1284" width="1284" height="1284">
   <defs>
     <linearGradient id="hexFill" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3b2d8a"/>
@@ -10,6 +10,8 @@
       <stop offset="100%" stop-color="#d97706"/>
     </linearGradient>
   </defs>
+  <rect width="1284" height="1284" fill="url(#hexFill)"/>
+  <g transform="translate(642,642) scale(3.4) translate(-128,-128)">
     <polygon points="128,12 232,72 232,184 128,244 24,184 24,72" fill="url(#hexFill)" stroke="url(#accent)" stroke-width="6" stroke-linejoin="round"/>
     <path d="M 128 64 A 64 64 0 1 0 192 128 L 192 128 L 160 128" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
     <polygon points="160,96 192,128 160,160" fill="url(#accent)"/>
@@ -19,4 +21,5 @@
       <circle cx="22" cy="26" r="4" fill="url(#hexFill)"/>
     </g>
     <polygon points="128,12 232,72 232,184 128,244 24,184 24,72" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" opacity="0.18"/>
+  </g>
 </svg>

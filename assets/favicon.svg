@@ -1,10 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="64" height="64" role="img" aria-label="Goto">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+    <linearGradient id="hexFill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b2d8a"/>
+      <stop offset="55%" stop-color="#5b3f9e"/>
+      <stop offset="100%" stop-color="#1f1b4d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <path d="M16 32 L26 42 L48 20" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <polygon points="128,12 232,72 232,184 128,244 24,184 24,72" fill="url(#hexFill)" stroke="url(#accent)" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M 128 64 A 64 64 0 1 0 192 128 L 192 128 L 160 128" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="160,96 192,128 160,160" fill="url(#accent)"/>
+    <g transform="translate(170,170)">
+      <rect x="0" y="10" width="44" height="32" rx="5" fill="#ffffff"/>
+      <path d="M 8 10 L 8 4 A 14 14 0 0 1 36 4 L 36 10" fill="none" stroke="#ffffff" stroke-width="5"/>
+      <circle cx="22" cy="26" r="4" fill="url(#hexFill)"/>
+    </g>
+    <polygon points="128,12 232,72 232,184 128,244 24,184 24,72" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" opacity="0.18"/>
 </svg>
