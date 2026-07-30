@@ -9,6 +9,7 @@ import {
   fetchProjects,
   fetchCategories,
   fetchTags,
+  acquireApiToken,
 } from '../../api';
 import { STORAGE_KEYS, initialCategories, initialTags } from '../constants';
 
@@ -219,6 +220,9 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
       await get().checkApiAvailability();
 
       if (get().apiAvailable) {
+        // 连接前后端:自动获取后端 Bearer token 并存入 secureStorage,
+        // 之后 fetch* 请求才能带 Authorization 头通过 /api/v1 鉴权。
+        await acquireApiToken();
         try {
           const [tasks, projects, categories, tags] = await Promise.all([
             fetchTasks(),

@@ -1,4 +1,4 @@
-import { getStoredAuth } from '../utils/secureStorage';
+import { getStoredAuth, setStoredAuth } from '../utils/secureStorage';
 import { getApiBaseUrl } from './config';
 
 export class ApiError extends Error {
@@ -80,6 +80,33 @@ async function authHeaders(): Promise<Record<string, string>> {
     headers.Authorization = `Bearer ${token}`;
   }
   return headers;
+}
+
+/**
+ * 自动获取后端 Bearer token 并存入 secureStorage(连接前后端的关键一步)。
+ *
+ * 本地优先单用户模型下,后端在回环地址经 GET /api/bootstrap/token 下发 token。
+ * 本函数在 loadData 阶段调用一次:成功后后续 fetch* 请求即可带 Authorization 头,
+ * 真正打通前端↔后端 REST。失败(后端未启动/非回环)时静默返回 false,
+ * loadData 会按原逻辑回退到本地存储,不影响离线使用。
+ *
+ * @returns 是否成功获取并存储 token
+ */
+export async function acquireApiToken(): Promise<boolean> {
+  try {
+    const base = getApiBaseUrl();
+    const response = await fetch(`${base}/api/bootstrap/token`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return false;
+    const data = (await response.json()) as { token?: string };
+    if (!data?.token) return false;
+    await setStoredAuth(null, data.token);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function get<T>(url: string): Promise<T> {
