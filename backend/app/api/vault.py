@@ -16,15 +16,10 @@ from app.database import get_db
 from app.models.vault import VaultItem
 from app.schemas.vault import VaultItemCreate, VaultItemResponse, VaultItemUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
-from app.utils.json_utils import json_dump, utc_now
+from app.utils.json_utils import utc_now
 
 router = APIRouter(prefix="/vault", tags=["vault"])
 
-
-def _dump_nullable(value) -> str | None:
-    if value is None:
-        return None
-    return json_dump(value)
 
 
 @router.get(
@@ -58,12 +53,8 @@ async def create_vault_item(
         **item_in.model_dump(exclude={
             "id", "created_at", "updated_at", "fields", "time_capsule",
         }),
-        fields=json_dump(
-            [f.model_dump() for f in item_in.fields]
-        ),
-        time_capsule=_dump_nullable(
-            item_in.time_capsule.model_dump() if item_in.time_capsule else None
-        ),
+        fields=[f.model_dump() for f in item_in.fields],
+        time_capsule=item_in.time_capsule.model_dump() if item_in.time_capsule else None,
         created_at=now,
         updated_at=now,
     )
@@ -95,15 +86,7 @@ async def update_vault_item(
     item_id: str, updates: VaultItemUpdate, db: AsyncSession = Depends(get_db)
 ):
     item = await get_or_404(db, VaultItem, item_id, "Vault item not found")
-    json_fields = {
-        "fields": lambda v: json_dump(
-            [f.model_dump() for f in v] if v and hasattr(v[0], "model_dump") else v
-        ),
-        "time_capsule": lambda v: _dump_nullable(
-            v.model_dump() if v and hasattr(v, "model_dump") else v
-        ),
-    }
-    apply_updates(item, updates, json_fields=json_fields)
+    apply_updates(item, updates)
     item.updated_at = utc_now()
     await db.commit()
     await db.refresh(item)

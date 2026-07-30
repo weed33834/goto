@@ -16,7 +16,7 @@ from app.database import get_db
 from app.models.habit import Habit
 from app.schemas.habit import HabitCreate, HabitResponse, HabitUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
-from app.utils.json_utils import json_dump, utc_now
+from app.utils.json_utils import utc_now
 
 router = APIRouter(prefix="/habits", tags=["habits"])
 
@@ -55,7 +55,7 @@ async def create_habit(
         **habit_in.model_dump(exclude={
             "id", "created_at", "updated_at", "completed_dates",
         }),
-        completed_dates=json_dump(habit_in.completed_dates),
+        completed_dates=habit_in.completed_dates,
         created_at=now,
         updated_at=now,
     )
@@ -87,7 +87,7 @@ async def update_habit(
     habit_id: str, updates: HabitUpdate, db: AsyncSession = Depends(get_db)
 ):
     habit = await get_or_404(db, Habit, habit_id, "Habit not found")
-    apply_updates(habit, updates, json_fields={"completed_dates": json_dump})
+    apply_updates(habit, updates)
     habit.updated_at = utc_now()
     await db.commit()
     await db.refresh(habit)

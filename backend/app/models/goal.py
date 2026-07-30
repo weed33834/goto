@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, String, Text
+from sqlalchemy import Boolean, DateTime, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -28,7 +28,7 @@ class Goal(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # JSON 数组:KeyResult[]
-    key_results: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="[]",
+    # JSON 数组:KeyResult[] (原生 JSON 类型,自动序列化)
+    key_results: Mapped[Optional[list]] = mapped_column(
+        JSON, nullable=True, default=list,
     )

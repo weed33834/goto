@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -166,6 +166,32 @@ async def root() -> RootResponse:
 )
 async def health_check() -> HealthResponse:
     return HealthResponse(status="healthy")
+
+
+@app.get(
+    "/api/bootstrap/token",
+    summary="引导下发 API token(本地优先单用户)",
+    responses={
+        200: {"description": "返回当前后端 API token"},
+        403: {"description": "非回环客户端或引导已禁用"},
+    },
+)
+async def bootstrap_token(request: Request) -> dict:
+    """前端自动获取 Bearer token 的引导端点。
+
+    设计前提:本地优先、单用户、后端仅绑定 127.0.0.1。前端在 loadData 阶段
+    调用本端点拿到 token 并存入 secureStorage,之后对 /api/v1/* 的请求即可带
+    Authorization 头。仅当请求来自回环地址且 allow_token_bootstrap 开启时下发,
+    避免在生产/多用户场景泄露 token。
+    """
+    client_host = request.client.host if request.client else ""
+    is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
+    if not settings.allow_token_bootstrap or not is_loopback:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="token bootstrap 已禁用或非回环客户端",
+        )
+    return {"token": get_or_create_api_token()}
 
 
 # 注册 API 路由，所有 /api/v1/* 端点都需要认证

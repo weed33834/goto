@@ -16,7 +16,7 @@ from app.database import get_db
 from app.models.goal import Goal
 from app.schemas.goal import GoalCreate, GoalResponse, GoalUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
-from app.utils.json_utils import json_dump, utc_now
+from app.utils.json_utils import utc_now
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -55,9 +55,7 @@ async def create_goal(
         **goal_in.model_dump(exclude={
             "id", "created_at", "updated_at", "key_results",
         }),
-        key_results=json_dump(
-            [kr.model_dump() for kr in goal_in.key_results]
-        ),
+        key_results=[kr.model_dump() for kr in goal_in.key_results],
         created_at=now,
         updated_at=now,
     )
@@ -90,12 +88,7 @@ async def update_goal(
 ):
     goal = await get_or_404(db, Goal, goal_id, "Goal not found")
 
-    def _dump_key_results(v):
-        return json_dump(
-            [kr.model_dump() for kr in v] if v and hasattr(v[0], "model_dump") else v
-        )
-
-    apply_updates(goal, updates, json_fields={"key_results": _dump_key_results})
+    apply_updates(goal, updates)
     goal.updated_at = utc_now()
     await db.commit()
     await db.refresh(goal)

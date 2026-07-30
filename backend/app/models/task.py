@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -31,11 +31,11 @@ class Task(Base):
 
     # 重复任务规则(RecurrenceRule JSON 文本)与设备版本向量(E2EE 同步因果偏序)。
     # 前者用于 buildNextRecurrenceTask,后者用于 P2P 同步协议。
-    recurrence: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="null")
-    device_version: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+    recurrence: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=None)
+    device_version: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=dict)
 
     # 任务地点(JSON 文本,Location 接口)。前端有此字段,后端原本缺失导致同步丢失。
-    location: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="null")
+    location: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=None)
 
     priority: Mapped[str] = mapped_column(String(20), default="medium")
     status: Mapped[str] = mapped_column(String(30), default="todo")
@@ -78,22 +78,22 @@ class Task(Base):
     )
 
     # 复杂字段以 JSON 文本存储，降低早期 schema 复杂度
-    tags: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    subtasks: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    attachments: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="[]"
+    tags: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
+    subtasks: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
+    attachments: Mapped[Optional[list]] = mapped_column(
+        JSON, nullable=True, default=list
     )
-    comments: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    links: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    comments: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
+    links: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
     custom_fields: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="[]"
+        JSON, nullable=True, default=list
     )
     dependencies: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="[]"
+        JSON, nullable=True, default=list
     )
-    blocked_by: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    checklist: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    blocked_by: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
+    notes: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
+    checklist: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
 
 
 class Project(Base):
@@ -126,7 +126,7 @@ class Project(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    tags: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    tags: Mapped[Optional[str]] = mapped_column(JSON, nullable=True, default=list)
 
 
 class Category(Base):

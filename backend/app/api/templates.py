@@ -16,7 +16,7 @@ from app.database import get_db
 from app.models.template import Template
 from app.schemas.template import TemplateCreate, TemplateResponse, TemplateUpdate
 from app.utils.crud import apply_updates, generate_id, get_or_404
-from app.utils.json_utils import json_dump, utc_now
+from app.utils.json_utils import utc_now
 
 router = APIRouter(prefix="/templates", tags=["templates"])
 
@@ -53,8 +53,8 @@ async def create_template(
             "id", "created_at", "updated_at", "task_defaults", "variables",
             "usage_count", "last_used_at",
         }),
-        task_defaults=json_dump(template_in.task_defaults, "{}"),
-        variables=json_dump(template_in.variables),
+        task_defaults=template_in.task_defaults,
+        variables=template_in.variables,
         created_at=now,
         updated_at=now,
     )
@@ -86,11 +86,7 @@ async def update_template(
     template_id: str, updates: TemplateUpdate, db: AsyncSession = Depends(get_db)
 ):
     template = await get_or_404(db, Template, template_id, "Template not found")
-    json_fields = {
-        "task_defaults": json_dump,
-        "variables": json_dump,
-    }
-    apply_updates(template, updates, json_fields=json_fields)
+    apply_updates(template, updates)
     template.updated_at = utc_now()
     await db.commit()
     await db.refresh(template)

@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -29,11 +29,11 @@ class Template(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # JSON:TemplateTaskDefaults
-    task_defaults: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="{}",
+    # JSON:TemplateTaskDefaults (原生 JSON 类型)
+    task_defaults: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True, default=dict,
     )
-    # JSON 数组:string[]
-    variables: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, default="[]",
+    # JSON 数组:string[] (原生 JSON 类型)
+    variables: Mapped[Optional[list]] = mapped_column(
+        JSON, nullable=True, default=list,
     )

@@ -24,7 +24,7 @@ from app.schemas.task import (
     TaskCreate, TaskResponse, TaskUpdate,
 )
 from app.utils.crud import apply_updates, generate_id, get_or_404
-from app.utils.json_utils import json_dump, json_load, utc_now
+from app.utils.json_utils import json_load, utc_now
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -141,9 +141,9 @@ async def create_task(
         reminder_date=task_in.reminder_date,
         energy_level=task_in.energy_level,
         context=task_in.context,
-        recurrence=json_dump(task_in.recurrence),
-        device_version=json_dump(task_in.device_version or {}),
-        location=json_dump(task_in.location),
+        recurrence=task_in.recurrence,
+        device_version=task_in.device_version or {},
+        location=task_in.location,
         priority=task_in.priority,
         status=task_in.status,
         progress=task_in.progress,
@@ -164,16 +164,16 @@ async def create_task(
         created_by=task_in.created_by,
         order=task_in.order,
         version=task_in.version,
-        tags=json_dump(task_in.tags),
-        subtasks=json_dump([s.model_dump() for s in task_in.subtasks]),
-        attachments=json_dump(task_in.attachments),
-        comments=json_dump(task_in.comments),
-        links=json_dump(task_in.links),
-        custom_fields=json_dump(task_in.custom_fields),
-        dependencies=json_dump(task_in.dependencies),
-        blocked_by=json_dump(task_in.blocked_by),
-        notes=json_dump(task_in.notes),
-        checklist=json_dump([c.model_dump() for c in task_in.checklist]),
+        tags=task_in.tags,
+        subtasks=[s.model_dump() for s in task_in.subtasks],
+        attachments=task_in.attachments,
+        comments=task_in.comments,
+        links=task_in.links,
+        custom_fields=task_in.custom_fields,
+        dependencies=task_in.dependencies,
+        blocked_by=task_in.blocked_by,
+        notes=task_in.notes,
+        checklist=[c.model_dump() for c in task_in.checklist],
         created_at=now,
         updated_at=now,
     )
@@ -243,7 +243,7 @@ async def update_task(
                 and all(hasattr(v, "model_dump") for v in value)
             ):
                 value = [v.model_dump() for v in value]
-            values[key] = json_dump(value)
+            values[key] = value
         elif hasattr(Task, key):
             values[key] = value
 
@@ -404,7 +404,7 @@ async def create_project(
             "id", "created_at", "updated_at", "tags",
             "task_count", "completed_task_count", "progress",
         }),
-        tags=json_dump(project_in.tags),
+        tags=project_in.tags,
         created_at=now,
         updated_at=now,
     )
@@ -436,7 +436,7 @@ async def update_project(
     project_id: str, updates: ProjectUpdate, db: AsyncSession = Depends(get_db)
 ):
     project = await get_or_404(db, Project, project_id, "Project not found")
-    apply_updates(project, updates, json_fields={"tags": json_dump})
+    apply_updates(project, updates)
     project.updated_at = utc_now()
     await db.commit()
     await db.refresh(project)

@@ -21,8 +21,13 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
 
-    # CORS 配置：逗号分隔的允许来源列表
-    cors_origins: str = "http://localhost:5173,http://localhost:8081"
+    # CORS 配置：逗号分隔的允许来源列表(补全 127.0.0.1 与移动端 5174 源)
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,http://localhost:8081"
+
+    # token 引导开关:本地优先单用户模型下,前端经 /api/bootstrap/token 自动获取
+    # Bearer token。仅当客户端为回环地址(127.0.0.1/::1)且该开关开启时下发,
+    # 生产/多用户部署应设为 False 避免 token 泄露。
+    allow_token_bootstrap: bool = True
 
     # 文档开关：生产环境默认关闭，可通过 ENABLE_DOCS=true 临时开启
     enable_docs: bool = False
